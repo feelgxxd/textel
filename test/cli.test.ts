@@ -43,6 +43,16 @@ test('cli: render writes a frames file and will not overwrite it', () => {
   assert.ok(existsSync(join(dir, 'sub-dice.json')));
 });
 
+test('cli: render to a .svg writes an animated image', () => {
+  const r = textel('render', '--example', 'gem', '-o', 'gem.svg', '--size', '40x16', '--frames', '4');
+  assert.equal(r.code, 0, r.err);
+  assert.match(r.err, /wrote gem\.svg: 4 frames, 40x16/);
+  const svg = readFileSync(join(dir, 'gem.svg'), 'utf8');
+  assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+  assert.equal([...svg.matchAll(/<g class="f"/g)].length, 4);
+  assert.match(svg, /<title>GEM<\/title>/);
+});
+
 test('cli: a played frame is exactly the frame preview draws', () => {
   assert.equal(textel('render', '--example', 'gem', '-o', 'gem.json', '--size', '50x20', '--frames', '8').code, 0);
   const played = textel('play', 'gem.json', '--once', '--frame', '0');

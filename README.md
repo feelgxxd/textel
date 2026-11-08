@@ -2,22 +2,9 @@
 
 Turn 3D models into animated ASCII art, in the terminal and on the web.
 
-```
-          /-----------------\
-      /---/-----------------\----\
-   /--//-------------------------\\--\
- ////-----%@@@@@@@@@@@@##########----||
-/##%//%%%%@@@@@@@@@@@@@%############\|
-\\***##%@@@@@@@@@@@@@@@@%#####*++++==|
-  \\\**##############%%%%+==========//
-    \-\\*###############*====://////
-       \\\----------------///--///
-         \\\----------------//-/
-           \--\-----------///
-              \-\------//-/
-                \-\--///
-                  \--/
-```
+<p align="center"><img src="docs/gem.svg" width="480" alt="A gem spinning, drawn in ASCII characters"></p>
+
+<p align="center"><sub>An animated SVG made with <code>textel render --example gem --size 80x40 --frames 60 -o gem.svg</code></sub></p>
 
 ```sh
 npx @feelgxxd/textel model.glb                   # spins in your terminal
@@ -44,7 +31,7 @@ look with a live preview, and take it with you. Nothing to install, and your fil
 
 ```
 textel <model> [options]       spin it in the terminal (same as textel preview)
-textel render <model> [-o f]   record a spinning loop into a .textel.json file
+textel render <model> [-o f]   record a spinning loop into a .textel.json file or an animated .svg
 textel play <file>             play a recorded file
 textel list                    built-in examples and charsets
 textel help <command>          all options of a command
@@ -96,6 +83,8 @@ Two elements, both without dependencies and both loaded with one script tag:
 | size | about 3 KB | about 11 KB |
 | dragging | scrubs through the loop | turns the model any way, with a flick |
 | best for | a spinning logo | something people play with |
+
+Where scripts cannot run, such as a GitHub README, use an animated SVG instead (see below).
 
 ### `<textel-player>`
 
@@ -160,6 +149,25 @@ Also from JavaScript: `viewer.load(urlOrFileOrBytes)`, `viewer.mesh = mesh` (for
 `@feelgxxd/textel/sdf`), `play()`, `pause()`, and the `load` and `error` events.
 
 `npm run demo` serves both demo pages with drop zones for your own files, and an output benchmark.
+
+### Animated SVG
+
+An image that spins by itself, with no script: it plays in a GitHub README, in docs and anywhere else an
+`<img>` goes. The one at the top of this page is one.
+
+```sh
+textel render logo.glb --size 80x40 --frames 60 -o logo.svg
+```
+
+```md
+![logo](logo.svg)
+```
+
+Every frame is stored whole, so keep it small: 80×40 with 60 frames is about 220 KB (16 KB gzipped)
+without color; a gradient makes it several times larger. Without colors of its own it is transparent and
+its text follows the reader's light or dark theme. It shows a still frame to readers who prefer reduced
+motion. The playground makes one from its **Image** tab, and the library from any recording with
+`recordingSVG(recording, { color, background, cell })`.
 
 ## Presets
 

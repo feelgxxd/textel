@@ -4,6 +4,13 @@ All notable changes to textel. Versions follow [semantic versioning](https://sem
 the API may still change between minor versions. The frames file format has its own version
 (see [docs/format.md](docs/format.md)).
 
+## Unreleased
+
+### Added
+- Animated SVG: `textel render <model> -o out.svg`, `recordingSVG()` in the library, and an **Image** tab in
+  the playground. Plays without scripts, so it works in GitHub READMEs; follows the reader's light or dark
+  theme when it has no colors of its own; still for readers who prefer reduced motion
+
 ## 0.4.0 (2026-11-09)
 
 ### Added

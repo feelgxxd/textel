@@ -3,7 +3,7 @@
 import '../../src/browser/viewer.ts';
 import type { TextelViewer } from '../../src/browser/viewer.ts';
 import { EXAMPLES } from '../../src/examples.ts';
-import { RecordingBuilder, stringifyFrames } from '../../src/frames.ts';
+import { RecordingBuilder, recordingSVG, stringifyFrames } from '../../src/frames.ts';
 import { parseModelAsync } from '../../src/loaders/index.ts';
 import type { Mesh } from '../../src/mesh.ts';
 import { createRenderer } from '../../src/render.ts';
@@ -179,7 +179,7 @@ panels.append(
 
 // ---------- exports ----------
 
-const tabs = ['Live on a page', 'Recorded loop', 'Terminal', 'Preset'] as const;
+const tabs = ['Live on a page', 'Recorded loop', 'Image', 'Terminal', 'Preset'] as const;
 let tab: (typeof tabs)[number] = tabs[0];
 const shareButton = h('button', { type: 'button', class: 'primary' }, 'Copy link to this look');
 shareButton.addEventListener('click', async () => {
@@ -197,7 +197,7 @@ function codeBlock(text: string) {
 
 const presetButton = () => h('button', { type: 'button', onclick: () => download(presetJSON(state.look), 'look.json') }, 'Download look.json');
 
-let recording = false;
+let recording = false, svgPageColors = false;
 function renderExports() {
   const base = modelFile.replace(/\.[a-z0-9]+$/i, '');
   const body: HTMLElement[] = [];
@@ -207,9 +207,19 @@ function renderExports() {
     if (needsPreset(state.look)) body.push(h('p', { class: 'note' }, 'This look uses settings only a preset file carries; save it next to the page too.'), presetButton());
   } else if (tab === 'Recorded loop') {
     const rec = h('button', { type: 'button', class: 'primary', disabled: !mesh || recording }, recording ? 'Recording…' : `Record ${base}.textel.json`);
-    rec.addEventListener('click', () => recordLoop(rec, base));
+    rec.addEventListener('click', () => recordLoop(rec, base, 'json'));
     body.push(h('p', { class: 'note' }, 'One full turn rendered once and saved as a file. The player is about 3 KB and needs no 3D code.'), rec);
     body.push(codeBlock(embedSnippet(state, 'player', `${base}.textel.json`)));
+  } else if (tab === 'Image') {
+    const svg = h('button', { type: 'button', class: 'primary', disabled: !mesh || recording }, recording ? 'Recording…' : `Make ${base}.svg`);
+    svg.addEventListener('click', () => recordLoop(svg, base, 'svg'));
+    const pageColors = h('input', { type: 'checkbox', checked: svgPageColors, onchange: (e: Event) => { svgPageColors = (e.target as HTMLInputElement).checked; } });
+    body.push(
+      h('p', { class: 'note' }, 'An animated SVG plays anywhere an image does, with no script: a GitHub README, docs, a blog. Without page colors it is transparent and follows the reader\'s light or dark theme.'),
+      h('label', { class: 'check' }, pageColors, ' Use the page colors'),
+      svg,
+      codeBlock(`![${base}](${base}.svg)`),
+    );
   } else if (tab === 'Terminal') {
     body.push(h('p', { class: 'note' }, 'Needs Node 22 or newer.'));
     body.push(codeBlock(cliCommand(state, 'preview', modelFile) + '\n' + cliCommand(state, 'render', modelFile)));
@@ -228,12 +238,14 @@ function renderExports() {
   );
 }
 
-async function recordLoop(button: HTMLButtonElement, base: string) {
+async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' | 'svg') {
   if (!mesh) return;
   recording = true;
   button.disabled = true;
   try {
-    const frames = 120, r = createRenderer(mesh, mergeStyles(state.look, { width: 112, height: 56, aspect: 2 }));
+    // an image is smaller: every frame is stored whole, so fewer frames and cells keep it light
+    const [width, height, frames] = kind === 'svg' ? [80, 40, 60] : [112, 56, 120];
+    const r = createRenderer(mesh, mergeStyles(state.look, { width, height, aspect: 2 }));
     const b = new RecordingBuilder();
     for (let i = 0; i < frames; i++) {
       b.add(r.render({ yaw: (i / frames) * Math.PI * 2 }));
@@ -242,7 +254,9 @@ async function recordLoop(button: HTMLButtonElement, base: string) {
         await new Promise((res) => setTimeout(res));
       }
     }
-    download(stringifyFrames(b.build(30, { title: base, generator: 'textel playground' })), `${base}.textel.json`);
+    const rec = b.build(30, { title: base, generator: 'textel playground' });
+    if (kind === 'json') download(stringifyFrames(rec), `${base}.textel.json`);
+    else download(recordingSVG(rec, { title: base, ...(svgPageColors ? { color: state.page.fg, background: state.page.bg } : {}) }), `${base}.svg`, 'image/svg+xml');
   } finally {
     recording = false;
     renderExports();

@@ -3,8 +3,8 @@ export { toText, toANSI, toHTML, cellColor, type ColorDepth } from './output.ts'
 export { parseModel, parseModelAsync, parseModelSteps, parseGLTF, parseOBJ, parseSTL, MODEL_EXTENSIONS } from './loaders/index.ts';
 export {
   recordLoop, RecordingBuilder, encodeStream, decodeStream, toFramesFile, fromFramesFile, stringifyFrames, parseFrames,
-  recordingText, recordingANSI, FORMAT_VERSION, ENCODING,
-  type Recording, type FramesFile, type RecordOptions, type CellStyle,
+  recordingText, recordingANSI, recordingSVG, FORMAT_VERSION, ENCODING,
+  type Recording, type FramesFile, type RecordOptions, type CellStyle, type SVGOptions,
 } from './frames.ts';
 export { MeshBuilder, computeSmoothNormals, vertexCount, triangleCount, type Mesh } from './mesh.ts';
 export {

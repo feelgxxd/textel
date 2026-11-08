@@ -7,6 +7,7 @@ import type { Frame, Renderer } from './render.ts';
 import type { RGB } from './style.ts';
 
 export * from './format.ts';
+export { recordingSVG, type SVGOptions } from './svg.ts';
 
 export interface RecordOptions {
   /** frames in one full turn (default 120) */

@@ -27,7 +27,7 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | | |
 |---|---|
 | Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 79 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, 10 golden-frame snapshots) |
+| Tests | 83 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, 10 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
@@ -185,8 +185,9 @@ Live at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 
 Effort: **two sessions**.
 
-- [ ] **Animated SVG**: one `<text>` per row per frame, stepped with CSS animation; works inside GitHub
-  READMEs where scripts do not run. Size budget to be measured; offer fewer frames / smaller grids
+- [x] **Animated SVG**: one `<text>` per row per frame, stepped with CSS animation; works inside GitHub
+  READMEs where scripts do not run. 80×40 × 60 frames is ~220 KB (16 KB gzipped) without color; the
+  playground makes it at that size, the CLI at any size. The README shows one
 - [ ] **GIF and MP4**: done in the playground with canvas (and WebCodecs for MP4 where available);
   from the CLI as an optional add-on so the main package stays dependency-free
 - [ ] **Single frame**: PNG (playground), plain text and ANSI (CLI, already possible with `--once`)
@@ -286,6 +287,6 @@ Made:
 
 ## Next session starts with
 
-1. 0.5: exports, starting with animated SVG (it works inside GitHub READMEs)
-2. GIF and MP4 from the playground
-3. Single-file HTML
+1. 0.5: GIF and MP4 from the playground
+2. Single-file HTML, and a PNG of one frame
+3. Release 0.5.0
