@@ -1,0 +1,283 @@
+import { computeSmoothNormals, type Mesh } from './mesh.ts';
+import { mergeStyles, resolveMaterial, resolveStyle, type ResolvedMaterial, type Style, type StyleInput } from './style.ts';
+
+export interface View {
+  /** rotation around the vertical axis, radians */
+  yaw?: number;
+  /** tilt toward the viewer, radians; defaults to the style's pitch */
+  pitch?: number;
+  /** rotation around the view axis, radians */
+  roll?: number;
+}
+
+/** One rendered frame. Output adapters (text, ANSI, HTML) only read this. */
+export interface Frame {
+  width: number;
+  height: number;
+  /** one glyph per cell, row-major */
+  chars: string[];
+  /** surface brightness per cell, 0..1 (0 for background) */
+  lum: Float32Array;
+  /** material index per cell, -1 for background */
+  mat: Int16Array;
+  materials: ResolvedMaterial[];
+  style: Style;
+}
+
+export interface Renderer {
+  readonly mesh: Mesh;
+  readonly style: Style;
+  /** merge into the current style input */
+  setStyle(input: StyleInput): void;
+  render(view?: View): Frame;
+}
+
+const BG = -1;
+
+/**
+ * A small software rasterizer that draws into a character grid.
+ * The model is centered and scaled to a unit sphere; the camera sits on +z looking at the origin.
+ * Each cell is sampled `supersample`² times; the cell takes the mean brightness of the samples that hit.
+ */
+export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
+  const nV = mesh.positions.length / 3, nT = mesh.indices.length / 3;
+  if (!nT) throw new Error('the model has no triangles');
+  const I = mesh.indices, TM = mesh.triMaterial;
+
+  // ---- normalize to a unit sphere around the bounding box center ----
+  const P = new Float32Array(nV * 3);
+  {
+    const src = mesh.positions;
+    const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+    for (let v = 0; v < nV; v++) for (let a = 0; a < 3; a++) {
+      const x = src[v * 3 + a];
+      if (x < lo[a]) lo[a] = x;
+      if (x > hi[a]) hi[a] = x;
+    }
+    const c = [0, 1, 2].map((a) => (lo[a] + hi[a]) / 2);
+    let r = 0;
+    for (let v = 0; v < nV; v++) r = Math.max(r, Math.hypot(src[v * 3] - c[0], src[v * 3 + 1] - c[1], src[v * 3 + 2] - c[2]));
+    const k = 1 / (r || 1);
+    for (let v = 0; v < nV; v++) for (let a = 0; a < 3; a++) P[v * 3 + a] = (src[v * 3 + a] - c[a]) * k;
+  }
+  // extents used to fit the model in the grid while it spins around y
+  let rxz = 0, ry = 0;
+  for (let v = 0; v < nV; v++) {
+    rxz = Math.max(rxz, Math.hypot(P[v * 3], P[v * 3 + 2]));
+    ry = Math.max(ry, Math.abs(P[v * 3 + 1]));
+  }
+
+  let smoothN: Float32Array | null = null;
+  const VP = new Float32Array(nV * 3); // view space positions
+  const SX = new Float32Array(nV), SY = new Float32Array(nV), OZ = new Float32Array(nV);
+  let VN: Float32Array | null = null;
+
+  let styleInput: StyleInput = input;
+  let style = resolveStyle(styleInput);
+  let materials: ResolvedMaterial[] = [];
+  let sw = 0, sh = 0;
+  let sOoz = new Float32Array(0), sLum = new Float32Array(0), sMat = new Int16Array(0);
+  let cOoz = new Float32Array(0), cLum = new Float32Array(0), cMat = new Int16Array(0);
+
+  function configure() {
+    materials = mesh.materials.map((name) => resolveMaterial(name, style.materials[name]));
+    const ss = style.supersample;
+    if (sw !== style.width * ss || sh !== style.height * ss) {
+      sw = style.width * ss; sh = style.height * ss;
+      sOoz = new Float32Array(sw * sh); sLum = new Float32Array(sw * sh); sMat = new Int16Array(sw * sh);
+    }
+    const n = style.width * style.height;
+    if (cOoz.length !== n) { cOoz = new Float32Array(n); cLum = new Float32Array(n); cMat = new Int16Array(n); }
+  }
+  configure();
+
+  function normals(): Float32Array | null {
+    if (style.shading === 'flat') return null;
+    if (mesh.normals) return mesh.normals;
+    if (style.shading === 'smooth') return (smoothN ??= computeSmoothNormals(mesh));
+    return null;
+  }
+
+  /** focal length in samples: the model fits the grid at any yaw, at the resting pitch */
+  function focal(): number {
+    const D = style.distance, p = Math.abs(style.pitch);
+    const hx = Math.max(rxz, 1e-3), hy = Math.max(ry * Math.cos(p) + rxz * Math.sin(p), 1e-3);
+    // largest x/z a circle of radius r at distance D reaches, with perspective
+    const tx = hx / Math.sqrt(D * D - Math.min(hx * hx, D * D * 0.99));
+    const ty = hy / Math.sqrt(D * D - 1);
+    return style.zoom * Math.min((sw / 2) / tx, ((sh / 2) * style.aspect) / ty) * 0.98;
+  }
+
+  function render(view: View = {}): Frame {
+    const ss = style.supersample, W = style.width, H = style.height, D = style.distance, aspect = style.aspect;
+    const yaw = view.yaw ?? 0, pitch = view.pitch ?? style.pitch, roll = view.roll ?? 0;
+    // R = Rz(roll) * Rx(pitch) * Ry(yaw): spin on a turntable, then tilt toward the camera
+    const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), cr = Math.cos(roll), sr = Math.sin(roll);
+    // Rx*Ry
+    const a00 = cy, a01 = 0, a02 = sy;
+    const a10 = sp * sy, a11 = cp, a12 = -sp * cy;
+    const a20 = -cp * sy, a21 = sp, a22 = cp * cy;
+    const m00 = cr * a00 - sr * a10, m01 = cr * a01 - sr * a11, m02 = cr * a02 - sr * a12;
+    const m10 = sr * a00 + cr * a10, m11 = sr * a01 + cr * a11, m12 = sr * a02 + cr * a12;
+    const m20 = a20, m21 = a21, m22 = a22;
+
+    const f = focal(), fy = f / aspect, hw = sw / 2, hh = sh / 2;
+    for (let v = 0, o = 0; v < nV; v++, o += 3) {
+      const x = P[o], y = P[o + 1], z = P[o + 2];
+      const X = m00 * x + m01 * y + m02 * z, Y = m10 * x + m11 * y + m12 * z, Z = m20 * x + m21 * y + m22 * z;
+      VP[o] = X; VP[o + 1] = Y; VP[o + 2] = Z;
+      const ooz = 1 / (D - Z);
+      OZ[v] = ooz; SX[v] = hw + f * X * ooz; SY[v] = hh - fy * Y * ooz;
+    }
+    const N = normals();
+    if (N) {
+      if (!VN || VN.length !== N.length) VN = new Float32Array(N.length);
+      for (let o = 0; o < N.length; o += 3) {
+        const x = N[o], y = N[o + 1], z = N[o + 2];
+        VN[o] = m00 * x + m01 * y + m02 * z; VN[o + 1] = m10 * x + m11 * y + m12 * z; VN[o + 2] = m20 * x + m21 * y + m22 * z;
+      }
+    }
+
+    sOoz.fill(0); sMat.fill(BG);
+    const [lx, ly, lz] = style.light, amb = style.ambient, dif = 1 - amb;
+
+    for (let t = 0; t < nT; t++) {
+      const ia = I[t * 3], ib = I[t * 3 + 1], ic = I[t * 3 + 2];
+      const ax = SX[ia], ay = SY[ia], bx = SX[ib], by = SY[ib], cx = SX[ic], cyy = SY[ic];
+      const area = (bx - ax) * (cyy - ay) - (by - ay) * (cx - ax);
+      if (area === 0 || !Number.isFinite(area)) continue;
+      // sample centers sit at +0.5
+      const x0 = Math.max(0, Math.ceil(Math.min(ax, bx, cx) - 0.5)), x1 = Math.min(sw - 1, Math.floor(Math.max(ax, bx, cx) - 0.5));
+      const y0 = Math.max(0, Math.ceil(Math.min(ay, by, cyy) - 0.5)), y1 = Math.min(sh - 1, Math.floor(Math.max(ay, by, cyy) - 0.5));
+      if (x0 > x1 || y0 > y1) continue;
+
+      // geometric normal in view space, oriented toward the camera
+      const pa = ia * 3, pb = ib * 3, pc = ic * 3;
+      const e1x = VP[pb] - VP[pa], e1y = VP[pb + 1] - VP[pa + 1], e1z = VP[pb + 2] - VP[pa + 2];
+      const e2x = VP[pc] - VP[pa], e2y = VP[pc + 1] - VP[pa + 1], e2z = VP[pc + 2] - VP[pa + 2];
+      let fnx = e1y * e2z - e1z * e2y, fny = e1z * e2x - e1x * e2z, fnz = e1x * e2y - e1y * e2x;
+      const gx = (VP[pa] + VP[pb] + VP[pc]) / 3, gy = (VP[pa + 1] + VP[pb + 1] + VP[pc + 1]) / 3, gz = (VP[pa + 2] + VP[pb + 2] + VP[pc + 2]) / 3;
+      const vx = -gx, vy = -gy, vz = D - gz;
+      let flip = 1, flatLum = 0;
+      if (VN) {
+        // trust the vertex normals for "outside"; flip them when we see the inside of a face
+        const nsx = VN[pa] + VN[pb] + VN[pc], nsy = VN[pa + 1] + VN[pb + 1] + VN[pc + 1], nsz = VN[pa + 2] + VN[pb + 2] + VN[pc + 2];
+        if (fnx * nsx + fny * nsy + fnz * nsz < 0) { fnx = -fnx; fny = -fny; fnz = -fnz; }
+        if (fnx * vx + fny * vy + fnz * vz < 0) flip = -1;
+      } else {
+        if (fnx * vx + fny * vy + fnz * vz < 0) { fnx = -fnx; fny = -fny; fnz = -fnz; }
+        const l = Math.hypot(fnx, fny, fnz) || 1;
+        flatLum = amb + dif * Math.max(0, (fnx * lx + fny * ly + fnz * lz) / l);
+      }
+
+      const inv = 1 / area, mat = TM[t], oa = OZ[ia], ob = OZ[ib], oc = OZ[ic];
+      for (let y = y0; y <= y1; y++) {
+        const py = y + 0.5;
+        for (let x = x0; x <= x1; x++) {
+          const px = x + 0.5;
+          const w0 = ((bx - px) * (cyy - py) - (by - py) * (cx - px)) * inv;
+          const w1 = ((cx - px) * (ay - py) - (cyy - py) * (ax - px)) * inv;
+          const w2 = 1 - w0 - w1;
+          if (w0 < -1e-7 || w1 < -1e-7 || w2 < -1e-7) continue;
+          const ooz = w0 * oa + w1 * ob + w2 * oc, i = y * sw + x;
+          if (ooz <= sOoz[i]) continue;
+          sOoz[i] = ooz;
+          sMat[i] = mat;
+          if (VN) {
+            const nx = (w0 * VN[pa] + w1 * VN[pb] + w2 * VN[pc]) * flip;
+            const ny = (w0 * VN[pa + 1] + w1 * VN[pb + 1] + w2 * VN[pc + 1]) * flip;
+            const nz = (w0 * VN[pa + 2] + w1 * VN[pb + 2] + w2 * VN[pc + 2]) * flip;
+            const l = Math.hypot(nx, ny, nz) || 1;
+            sLum[i] = amb + dif * Math.max(0, (nx * lx + ny * ly + nz * lz) / l);
+          } else {
+            sLum[i] = flatLum;
+          }
+        }
+      }
+    }
+
+    // ---- resolve samples into cells ----
+    const n = ss * ss, need = Math.max(1, Math.ceil(style.coverage * n - 1e-9));
+    const votes = new Int16Array(n);
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+      let hit = 0, lum = 0, ooz = 0;
+      for (let sy2 = 0; sy2 < ss; sy2++) for (let sx2 = 0; sx2 < ss; sx2++) {
+        const i = (r * ss + sy2) * sw + c * ss + sx2;
+        if (sMat[i] === BG) continue;
+        votes[hit++] = sMat[i];
+        lum += sLum[i];
+        if (sOoz[i] > ooz) ooz = sOoz[i];
+      }
+      const ci = r * W + c;
+      if (hit < need) { cMat[ci] = BG; cLum[ci] = 0; cOoz[ci] = 0; continue; }
+      cMat[ci] = hit === 1 ? votes[0] : majority(votes, hit);
+      cLum[ci] = lum / hit;
+      cOoz[ci] = ooz;
+    }
+
+    // ---- glyphs ----
+    const chars: string[] = new Array(W * H);
+    for (let i = 0; i < W * H; i++) {
+      const m = cMat[i];
+      if (m === BG) { chars[i] = ' '; continue; }
+      const ms = materials[m];
+      if (ms.carved) { chars[i] = ' '; continue; }
+      const ramp = ms.chars ?? style.chars;
+      chars[i] = ramp[Math.min(ramp.length - 1, Math.floor(cLum[i] * ramp.length))];
+    }
+    if (style.edges) drawEdges(chars, W, H);
+
+    return { width: W, height: H, chars, lum: cLum.slice(), mat: cMat.slice(), materials, style };
+  }
+
+  function drawEdges(chars: string[], W: number, H: number) {
+    const depth = style.edges === 'depth', th = style.edgeThreshold, aspect = style.aspect;
+    const solid = (c: number, r: number) => c >= 0 && r >= 0 && c < W && r < H && cMat[r * W + c] !== BG;
+    const F = (c: number, r: number) => (solid(c, r) ? cOoz[r * W + c] : 0);
+    // the angles '/' and '\' actually sit at in a cell this tall
+    const diag = Math.atan(aspect), b1 = diag / 2, b2 = (diag + Math.PI / 2) / 2, b3 = Math.PI - b2, b4 = Math.PI - b1;
+    const [hz, rise, vert, fall] = style.edgeChars;
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+      const i = r * W + c;
+      if (cMat[i] === BG || materials[cMat[i]].carved) continue;
+      let edge = false;
+      for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        if (!solid(c + dc, r + dr)) { edge = true; break; }
+        // only the nearer side of a depth step gets the line
+        if (depth && cOoz[i] - F(c + dc, r + dr) > th * cOoz[i]) { edge = true; break; }
+      }
+      if (!edge) continue;
+      // Sobel on inverse depth (background = 0); screen y points down
+      const gx = F(c + 1, r - 1) + 2 * F(c + 1, r) + F(c + 1, r + 1) - F(c - 1, r - 1) - 2 * F(c - 1, r) - F(c - 1, r + 1);
+      const gyDown = F(c - 1, r + 1) + 2 * F(c, r + 1) + F(c + 1, r + 1) - F(c - 1, r - 1) - 2 * F(c, r - 1) - F(c + 1, r - 1);
+      const gy = -gyDown / aspect;
+      if (gx === 0 && gy === 0) continue;
+      // the line runs perpendicular to the gradient
+      let a = Math.atan2(gx, -gy);
+      if (a < 0) a += Math.PI;
+      if (a >= Math.PI) a -= Math.PI;
+      chars[i] = a < b1 || a >= b4 ? hz : a < b2 ? rise : a < b3 ? vert : fall;
+    }
+  }
+
+  return {
+    mesh,
+    get style() { return style; },
+    setStyle(next: StyleInput) {
+      styleInput = mergeStyles(styleInput, next);
+      style = resolveStyle(styleInput);
+      configure();
+    },
+    render,
+  };
+}
+
+function majority(v: Int16Array, n: number): number {
+  let best = v[0], bestN = 0;
+  for (let i = 0; i < n; i++) {
+    let k = 0;
+    for (let j = 0; j < n; j++) if (v[j] === v[i]) k++;
+    if (k > bestN) { bestN = k; best = v[i]; }
+  }
+  return best;
+}

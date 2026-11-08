@@ -1,0 +1,42 @@
+{
+  "name": "textel",
+  "version": "0.1.0",
+  "description": "Turn 3D models into animated ASCII art for the terminal and the web.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Berk Beken",
+  "keywords": ["ascii", "ascii-art", "3d", "terminal", "renderer", "gltf", "obj", "stl", "sdf"],
+  "bin": {
+    "textel": "dist/cli/main.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./sdf": {
+      "types": "./dist/sdf.d.ts",
+      "default": "./dist/sdf.js"
+    },
+    "./examples": {
+      "types": "./dist/examples.d.ts",
+      "default": "./dist/examples.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node src/cli/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc",
+    "test": "node --test \"test/*.test.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}
