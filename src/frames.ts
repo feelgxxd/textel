@@ -1,6 +1,7 @@
 // Frames files: a looped animation rendered once and stored compactly, so it can be played
 // without the renderer. See docs/format.md for the byte layout.
-import { cellColor, type ColorDepth } from './output.ts';
+import { bg, FAINT, fg, line, type ColorDepth } from './ansi.ts';
+import { cellColor } from './output.ts';
 import type { Frame, Renderer } from './render.ts';
 import type { RGB } from './style.ts';
 
@@ -57,6 +58,8 @@ export interface RecordOptions {
   /** colors are rounded to multiples of this per channel, which keeps the palette small (default 8) */
   colorStep?: number;
   meta?: Record<string, unknown>;
+  /** called after each frame, for progress */
+  onFrame?: (done: number, total: number) => void;
 }
 
 const hex = (c: RGB) => '#' + c.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
@@ -65,7 +68,10 @@ const hex = (c: RGB) => '#' + c.map((v) => Math.max(0, Math.min(255, Math.round(
 export function recordLoop(renderer: Renderer, opts: RecordOptions = {}): Recording {
   const n = Math.max(1, Math.round(opts.frames ?? 120)), turns = opts.turns ?? 1, yaw0 = opts.yaw ?? 0;
   const rec = new RecordingBuilder(opts.colorStep ?? 8);
-  for (let i = 0; i < n; i++) rec.add(renderer.render({ yaw: yaw0 + (i / n) * turns * Math.PI * 2 }));
+  for (let i = 0; i < n; i++) {
+    rec.add(renderer.render({ yaw: yaw0 + (i / n) * turns * Math.PI * 2 }));
+    opts.onFrame?.(i + 1, n);
+  }
   return rec.build(opts.fps ?? 30, opts.meta ?? {});
 }
 
@@ -287,11 +293,12 @@ export function toFramesFile(rec: Recording): FramesFile {
     fps: rec.fps,
     frameCount: rec.frames.length,
     glyphs: rec.glyphs,
+    // header fields first, so the file reads well when opened; the long data string goes last
+    ...(rec.styles ? { styles: rec.styles } : {}),
+    ...(rec.bg ? { bg: rec.bg } : {}),
+    ...(Object.keys(rec.meta).length ? { meta: rec.meta } : {}),
     data: toBase64(encodeStream(rec)),
   };
-  if (rec.styles) file.styles = rec.styles;
-  if (rec.bg) file.bg = rec.bg;
-  if (Object.keys(rec.meta).length) file.meta = rec.meta;
   return file;
 }
 
@@ -340,40 +347,15 @@ export function recordingText(rec: Recording, index: number): string {
 
 const rgbOf = (h: string): RGB => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 
-function to256([r, g, b]: RGB): number {
-  if (Math.abs(r - g) < 10 && Math.abs(g - b) < 10) {
-    const v = (r + g + b) / 3;
-    return v < 8 ? 16 : v > 238 ? 231 : 232 + Math.round(((v - 8) / 230) * 23);
-  }
-  const q = (x: number) => Math.round((x / 255) * 5);
-  return 16 + 36 * q(r) + 6 * q(g) + q(b);
-}
-
 /** one frame as ANSI lines */
 export function recordingANSI(rec: Recording, index: number, depth: ColorDepth = 'truecolor'): string[] {
   const { width: W, height: H, glyphs } = rec, fr = rec.frames[index];
-  const codes = (rec.styles ?? ['']).map((st) => {
-    if (st === '') return '';
-    if (st === '~') return '\x1b[2m';
-    if (depth === 'none') return '';
-    const c = rgbOf(st);
-    return depth === 'truecolor' ? `\x1b[38;2;${c[0]};${c[1]};${c[2]}m` : `\x1b[38;5;${to256(c)}m`;
-  });
-  const bg = rec.bg && depth !== 'none' ? (depth === 'truecolor' ? `\x1b[48;2;${rgbOf(rec.bg).join(';')}m` : `\x1b[48;5;${to256(rgbOf(rec.bg))}m`) : '';
+  const codes = (rec.styles ?? ['']).map((st) => (st === '' ? '' : st === '~' ? FAINT : fg(rgbOf(st), depth)));
+  const background = bg(rec.bg ? rgbOf(rec.bg) : null, depth);
+  const ch = (i: number) => glyphs[fr.glyph[i]];
+  const code = fr.style ? (i: number) => codes[fr.style![i]] : () => '';
   const lines: string[] = [];
-  for (let r = 0; r < H; r++) {
-    let s = bg, cur = '';
-    for (let c = 0; c < W; c++) {
-      const i = r * W + c, ch = glyphs[fr.glyph[i]];
-      if (ch !== ' ' && fr.style) {
-        const code = codes[fr.style[i]];
-        if (code !== cur) { s += cur ? '\x1b[0m' + bg + code : code; cur = code; }
-      }
-      s += ch;
-    }
-    if (cur || bg) s += '\x1b[0m';
-    lines.push(s);
-  }
+  for (let r = 0; r < H; r++) lines.push(line(ch, code, r * W, W, background));
   return lines;
 }
 

@@ -31,6 +31,8 @@ Reads `.glb`, `.gltf`, `.obj` and `.stl`. Everything runs locally; nothing is up
 
 ```
 textel <model> [options]       spin it in the terminal (same as textel preview)
+textel render <model> [-o f]   record a spinning loop into a .textel.json file
+textel play <file>             play a recorded file
 textel list                    built-in examples and charsets
 textel help <command>          all options of a command
 
@@ -48,6 +50,28 @@ output
 ```
 
 Keys while it runs: `←→↑↓` rotate, `+/-` zoom, `c` charset, `e` edges, `l` light, `space` pause, `r` reset, `q` quit.
+
+### Recording and playing
+
+```sh
+textel render logo.glb --color "#301000,#ffb000"   # writes logo.textel.json (120 frames, 112x56)
+textel play logo.textel.json                       # space pause, ←→ step, +/- speed, q quit
+```
+
+A frames file is played without the 3D renderer, so it is cheap to show anywhere.
+The format is documented in [docs/format.md](docs/format.md).
+
+### In your own CLI
+
+```ts
+import { playSplash } from 'textel/terminal';
+
+await playSplash('logo.textel.json', { seconds: 2 }); // any key skips it
+```
+
+`play(recording, options)` from the same module gives full control: looping, keys, an
+`AbortSignal`, the output stream. Both restore the terminal however playback ends, and print a single
+frame when the output is not a terminal.
 
 ## Presets
 

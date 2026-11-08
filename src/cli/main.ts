@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
 import * as list from './commands/list.ts';
+import * as play from './commands/play.ts';
 import * as preview from './commands/preview.ts';
+import * as render from './commands/render.ts';
 import { fail } from './shared.ts';
 
 interface Command {
   summary: string;
   HELP: string;
-  run(argv: string[]): void;
+  run(argv: string[]): void | Promise<void>;
 }
 
-const COMMANDS: Record<string, Command> = { preview, list };
+const COMMANDS: Record<string, Command> = { preview, render, play, list };
 
 const HELP = `textel: 3D models as animated ASCII art
 
@@ -28,6 +30,8 @@ ${Object.entries(COMMANDS).map(([name, c]) => `  ${name.padEnd(10)} ${c.summary}
 examples
   textel model.glb
   textel --example gem --color "#301000,#ffb000"
+  textel render logo.glb -o logo.textel.json
+  textel play logo.textel.json
   textel model.stl --once --size 80x40 > art.txt
 `;
 

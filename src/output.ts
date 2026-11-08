@@ -1,5 +1,8 @@
 import type { Frame } from './render.ts';
+import { bg, FAINT, fg, line, type ColorDepth } from './ansi.ts';
 import type { RGB } from './style.ts';
+
+export type { ColorDepth };
 
 /** Plain text, one line per row. */
 export function toText(frame: Frame): string {
@@ -31,49 +34,16 @@ export function cellColor(frame: Frame, i: number): { rgb: RGB | null; faint: bo
   return { rgb: [Math.round(rgb[0]), Math.round(rgb[1]), Math.round(rgb[2])], faint: false };
 }
 
-export type ColorDepth = 'truecolor' | '256' | 'none';
-
-function rgbTo256([r, g, b]: RGB): number {
-  // grays get the 24-step ramp, everything else the 6x6x6 cube
-  if (Math.abs(r - g) < 10 && Math.abs(g - b) < 10) {
-    const v = (r + g + b) / 3;
-    if (v < 8) return 16;
-    if (v > 238) return 231;
-    return 232 + Math.round(((v - 8) / 230) * 23);
-  }
-  const q = (x: number) => Math.round((x / 255) * 5);
-  return 16 + 36 * q(r) + 6 * q(g) + q(b);
-}
-
 /** ANSI-colored lines for a terminal. Color codes are only written when they change. */
 export function toANSI(frame: Frame, depth: ColorDepth = 'truecolor'): string[] {
   const { width: W, height: H, chars } = frame;
-  const bg = frame.style.color.bg;
-  const bgCode = bg && depth !== 'none' ? (depth === 'truecolor' ? `\x1b[48;2;${bg[0]};${bg[1]};${bg[2]}m` : `\x1b[48;5;${rgbTo256(bg)}m`) : '';
+  const background = bg(frame.style.color.bg, depth);
+  const code = (i: number) => {
+    const { rgb, faint } = cellColor(frame, i);
+    return rgb && depth !== 'none' ? fg(rgb, depth) : faint ? FAINT : '';
+  };
   const lines: string[] = [];
-  for (let r = 0; r < H; r++) {
-    let s = bgCode, cur = '';
-    for (let c = 0; c < W; c++) {
-      const i = r * W + c, ch = chars[i];
-      if (ch !== ' ' && depth !== 'none') {
-        const { rgb, faint } = cellColor(frame, i);
-        const code = rgb
-          ? depth === 'truecolor' ? `\x1b[38;2;${rgb[0]};${rgb[1]};${rgb[2]}m` : `\x1b[38;5;${rgbTo256(rgb)}m`
-          : faint ? '\x1b[2m' : '';
-        if (code !== cur) {
-          s += cur ? '\x1b[0m' + bgCode + code : code;
-          cur = code;
-        }
-      } else if (ch !== ' ' && depth === 'none') {
-        const { faint } = cellColor(frame, i);
-        const code = faint ? '\x1b[2m' : '';
-        if (code !== cur) { s += cur ? '\x1b[0m' + code : code; cur = code; }
-      }
-      s += ch;
-    }
-    if (cur || bgCode) s += '\x1b[0m';
-    lines.push(s);
-  }
+  for (let r = 0; r < H; r++) lines.push(line((i) => chars[i], code, r * W, W, background));
   return lines;
 }
 

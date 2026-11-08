@@ -20,13 +20,13 @@ Each milestone ends with something people can use. Versions before 1.0 may chang
 
 ## Where things stand (November 2026)
 
-Three milestones are done: 0.1, 0.2.1 and 0.2.2. textel works today as a **terminal tool and a library
+Four milestones are done: 0.1, 0.2.1, 0.2.2 and 0.2.3. textel works today as a **terminal tool and a library
 for Node**; nothing runs in a browser yet, and nothing is published.
 
 | | |
 |---|---|
-| Code | ~2,100 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 40 (loaders, meshing, rendering, frames format, 10 golden-frame snapshots) |
+| Code | ~2,500 lines of TypeScript in `src`, no runtime dependencies |
+| Tests | 50 (loaders, meshing, rendering, frames format, terminal player, CLI, 10 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Frames files | 120 frames at 112×56, gzipped: 47 KB average without color, 93 KB with a gradient |
@@ -36,16 +36,16 @@ for Node**; nothing runs in a browser yet, and nothing is published.
 ### What works
 - `textel <model>` spins a `.glb` / `.gltf` / `.obj` / `.stl` in the terminal, with keys for rotation,
   zoom, charset, edges, light; `--once` prints one frame; presets and style flags
+- `textel render` records a loop into a `.textel.json` file; `textel play` plays it (pause, step, speed)
 - `textel list`, `textel help <command>`
 - Library: `parseModel`, `createRenderer`, `toText` / `toANSI` / `toHTML`, `textel/sdf`,
-  `recordLoop` / `stringifyFrames` / `parseFrames`
+  `recordLoop` / `stringifyFrames` / `parseFrames`, `textel/terminal` (`play`, `playSplash`)
 - Built-in examples: donut, dice, rocket, planet, mug, gem
 
 ### Known issues and debt
 | Item | Effect | Planned in |
 |---|---|---|
-| Live terminal mode has no automated test (it works by hand in Windows Terminal) | a regression in `live.ts` would only show by hand | 0.2.3 (play shares the loop; add a pty-free test of the frame writer) |
-| ANSI color code logic exists twice (`output.ts`, `frames.ts`) | two places to fix | 0.2.3 |
+| Live preview keys (`live.ts`) are only tested by hand; the screen and player under them are tested with fake streams | a key handling regression in preview would only show by hand | any time |
 | Decoded frames use two `Uint16Array`s per frame (~3 MB for 120 frames at 112×56) | heavy for the web player | 0.2.4 (`Uint8Array` when palettes fit, or decode on demand) |
 | `dice` example takes ~0.8 s to mesh | slow start where it is built at runtime | 0.3 (faster field, or ship examples pre-meshed) |
 | Fit uses the resting pitch only | dragging far up or down can clip the model | 0.3 |
@@ -56,33 +56,33 @@ for Node**; nothing runs in a browser yet, and nothing is published.
 
 ---
 
-## Next: 0.2.3 `textel render` and `textel play`
+## 0.2.3 `textel render` and `textel play` ✅
 
-Turns the frames format into something people use from the terminal. Effort: **one session**.
+Turns the frames format into something people use from the terminal.
 
 ### `textel render`
-- [ ] `textel render <model|--example> -o out.textel.json` with every style flag from preview
-- [ ] `--frames <n>` (default 120), `--fps <n>` (default 30), `--turns <n>` (default 1, negative reverses),
+- [x] `textel render <model|--example> -o out.textel.json` with every style flag from preview
+- [x] `--frames <n>` (default 120), `--fps <n>` (default 30), `--turns <n>` (default 1, negative reverses),
   `--size WxH` (default 112×56), `--aspect` (default 2; use the target font's value for the web)
-- [ ] Without `-o`: write `<model name>.textel.json` next to the current directory; refuse to overwrite without `--force`
-- [ ] Progress on stderr while rendering; at the end the frame count, file size and gzip size
-- [ ] `meta`: title (model or example name), textel version, render settings, so a file can be re-rendered
+- [x] Without `-o`: write `<model name>.textel.json` next to the current directory; refuse to overwrite without `--force`
+- [x] Progress on stderr while rendering; at the end the frame count, file size and gzip size
+- [x] `meta`: title (model or example name), textel version, render settings, so a file can be re-rendered
 
 ### `textel play`
-- [ ] `textel play <file.textel.json>` full screen, looping, same alternate-screen handling as preview
-- [ ] Keys: `space` pause, `←/→` step a frame (scrub), `+/-` speed, `q` quit
-- [ ] Centers the grid if the terminal is bigger, warns once if it is smaller
-- [ ] `--once` prints one frame (`--frame <n>`), useful in scripts and for tests
+- [x] `textel play <file.textel.json>` full screen, looping, same alternate-screen handling as preview
+- [x] Keys: `space` pause, `←/→` step a frame (scrub), `+/-` speed, `q` quit
+- [x] Centers the grid if the terminal is bigger, warns once if it is smaller
+- [x] `--once` prints one frame (`--frame <n>`), useful in scripts and for tests
 
 ### `textel/terminal` (library)
-- [ ] `play(recording, { stream, loop, seconds, signal })` returns a promise; used by `textel play` itself
-- [ ] `playSplash(file, { seconds = 2 })`: shows a spinning logo in another CLI, then restores the screen
-- [ ] Respects `NO_COLOR`, non-TTY output (prints one frame instead) and Ctrl+C
+- [x] `play(recording, { output, input, loop, seconds, signal })` returns a promise; used by `textel play` itself
+- [x] `playSplash(file, { seconds = 2 })`: shows a spinning logo in another CLI, then restores the screen
+- [x] Respects `NO_COLOR`, non-TTY output (prints one frame instead) and Ctrl+C
 
 ### Cleanup
-- [ ] One shared ANSI color module for `output.ts`, `frames.ts` and the players
-- [ ] Shared loop and screen code for preview and play (`cli/screen.ts`)
-- [ ] CLI tests that spawn the built CLI: `render` → file exists and parses; `play --once` prints the same
+- [x] One shared ANSI color module for `output.ts`, `frames.ts` and the players
+- [x] Shared loop and screen code for preview and play (`Screen` in `src/terminal.ts`)
+- [x] CLI tests that spawn the CLI: `render` → file exists and parses; `play --once` prints the same
   text as `preview --once` for the same settings
 
 **Done when** `textel render` + `textel play` work on all three CI platforms and a frame from `play`
@@ -90,7 +90,7 @@ matches the frame `preview` draws for the same settings.
 
 ---
 
-## Then: 0.2.4 `<textel-player>` for the web
+## Next: 0.2.4 `<textel-player>` for the web
 
 The first thing that runs in a browser. Effort: **one to two sessions**.
 
@@ -267,5 +267,5 @@ Ideas that fit the project but are not on the path to 1.0. Value and effort are 
 
 ## Next session starts with
 
-1. 0.2.3: `textel render`, `textel play`, `textel/terminal`, shared ANSI and screen code, CLI tests
-2. Then 0.2.4: esbuild, `<textel-player>`, size check, demo page
+1. 0.2.4: esbuild, `<textel-player>`, size check, demo page
+2. Then the decisions due at 0.2.4: npm publish, public repo, browser test tool

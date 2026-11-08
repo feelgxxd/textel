@@ -6,6 +6,7 @@ import { buildExample, EXAMPLES, findExample } from '../examples.ts';
 import { parseModel } from '../loaders/index.ts';
 import type { Mesh } from '../mesh.ts';
 import type { ColorDepth } from '../output.ts';
+import { detectColorDepth } from '../terminal.ts';
 import { CHARSETS, mergeStyles, type StyleInput, type Vec3 } from '../style.ts';
 
 export function fail(msg: string): never {
@@ -171,11 +172,7 @@ export function styleFrom(o: StyleValues, base: StyleInput): StyleInput {
   return mergeStyles(b, preset, flags);
 }
 
-/** what the terminal can show, honoring NO_COLOR / FORCE_COLOR and --no-color */
+/** what stdout can show, honoring NO_COLOR / FORCE_COLOR and --no-color */
 export function colorDepth(noColor: boolean | undefined): ColorDepth {
-  const env = process.env;
-  if (noColor || env.NO_COLOR) return 'none';
-  if (!process.stdout.isTTY && !env.FORCE_COLOR) return 'none';
-  if (env.COLORTERM === 'truecolor' || env.COLORTERM === '24bit' || env.WT_SESSION || env.TERM_PROGRAM === 'vscode' || env.TERM_PROGRAM === 'iTerm.app') return 'truecolor';
-  return '256';
+  return noColor ? 'none' : detectColorDepth(process.stdout);
 }

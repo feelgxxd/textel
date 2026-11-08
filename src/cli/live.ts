@@ -2,6 +2,7 @@ import type { Mesh } from '../mesh.ts';
 import { toANSI, type ColorDepth } from '../output.ts';
 import { createRenderer } from '../render.ts';
 import { CHARSETS, mergeStyles, resolveStyle, type EdgeMode, type StyleInput } from '../style.ts';
+import { Screen } from '../terminal.ts';
 
 export interface LiveOptions {
   mesh: Mesh;
@@ -12,47 +13,30 @@ export interface LiveOptions {
   fps: number;
 }
 
-const CSI = '\x1b[';
 const EDGE_MODES: EdgeMode[] = [false, 'outline', 'depth'];
 
-/** Full-screen animation in the terminal until q / Ctrl+C. */
+/** Full-screen live rendering in the terminal until q / Ctrl+C. */
 export function live(opts: LiveOptions) {
-  const out = process.stdout, inp = process.stdin;
   const base = resolveStyle(opts.style);
-  const size = (): [number, number] => opts.fixedSize ?? [Math.max(10, out.columns), Math.max(5, out.rows - 1)];
-  let [w, h] = size();
-  const renderer = createRenderer(opts.mesh, mergeStyles(opts.style, { width: w, height: h }));
+  let screen: Screen;
+  const size = (): [number, number] => opts.fixedSize ?? [Math.max(10, screen.columns), Math.max(5, screen.rows - 1)];
 
   const charsets = Object.keys(CHARSETS);
-  let charsetName = opts.style.chars !== undefined ? 'custom' : opts.style.charset ?? 'classic';
+  const initialCharset = opts.style.chars !== undefined ? 'custom' : opts.style.charset ?? 'classic';
+  let charsetName = initialCharset;
   let edgeMode = EDGE_MODES.indexOf(base.edges);
   let yaw = 0, pitchOffset = 0, zoom = base.zoom, light = 0, paused = base.spin === 0;
   const spin = base.spin || 0.66;
   let fps = 0, frames = 0, acc = 0, last = performance.now();
+  let timer: ReturnType<typeof setInterval> | undefined;
 
-  const restore = () => {
-    out.write(`${CSI}0m${CSI}?25h${CSI}?1049l`);
-    if (inp.isTTY) inp.setRawMode(false);
+  const quit = (code = 0) => {
+    clearInterval(timer);
+    screen.close();
+    process.exit(code);
   };
-  const quit = () => { restore(); process.exit(0); };
-  process.on('exit', restore);
-  process.on('SIGINT', quit);
-  process.on('SIGTERM', quit);
-  process.on('uncaughtException', (e) => { restore(); console.error(e); process.exit(1); });
 
-  // alternate screen, hidden cursor
-  out.write(`${CSI}?1049h${CSI}?25l${CSI}2J`);
-  out.on('resize', () => {
-    if (opts.fixedSize) return;
-    [w, h] = size();
-    renderer.setStyle({ width: w, height: h });
-    out.write(`${CSI}2J`);
-  });
-
-  inp.setRawMode(true);
-  inp.resume();
-  inp.setEncoding('utf8');
-  inp.on('data', (key: string) => {
+  const onKey = (key: string) => {
     switch (key) {
       case 'q': case 'Q': case '\x03': case '\x1b': quit(); break;
       case ' ': paused = !paused; break;
@@ -81,11 +65,25 @@ export function live(opts: LiveOptions) {
       }
       case 'r':
         yaw = 0; pitchOffset = 0; zoom = base.zoom; light = 0; edgeMode = EDGE_MODES.indexOf(base.edges);
-        charsetName = opts.style.chars !== undefined ? 'custom' : opts.style.charset ?? 'classic';
+        charsetName = initialCharset;
         renderer.setStyle({ ...opts.style, zoom, light: base.light, edges: base.edges });
         break;
     }
+  };
+
+  screen = new Screen({
+    onKey,
+    onResize: () => {
+      if (opts.fixedSize) return;
+      const [w, h] = size();
+      renderer.setStyle({ width: w, height: h });
+    },
   });
+  process.on('SIGTERM', () => quit());
+  process.on('uncaughtException', (e) => { screen.close(); console.error(e); process.exit(1); });
+
+  const [w0, h0] = size();
+  const renderer = createRenderer(opts.mesh, mergeStyles(opts.style, { width: w0, height: h0 }));
 
   const tick = () => {
     const now = performance.now(), dt = Math.min(now - last, 100) / 1000;
@@ -94,12 +92,12 @@ export function live(opts: LiveOptions) {
     if (acc >= 0.5) { fps = Math.round(frames / acc); frames = 0; acc = 0; }
     if (!paused) yaw += spin * dt;
     const frame = renderer.render({ yaw, pitch: base.pitch + pitchOffset });
-    const lines = toANSI(frame, opts.depth);
     const edge = EDGE_MODES[edgeMode] || 'off';
-    let status = ` ${opts.name} · ${frame.width}×${frame.height} · ${charsetName} · edges ${edge} · ${fps}fps${paused ? ' · paused' : ''}   ←→↑↓ rotate  +/- zoom  c chars  e edges  l light  space pause  r reset  q quit`;
-    status = status.slice(0, w).padEnd(w);
-    out.write(`${CSI}H${lines.join('\n')}\n${CSI}2m${status}${CSI}0m`);
+    screen.draw(
+      toANSI(frame, opts.depth),
+      ` ${opts.name} · ${frame.width}×${frame.height} · ${charsetName} · edges ${edge} · ${fps}fps${paused ? ' · paused' : ''}   ←→↑↓ rotate  +/- zoom  c chars  e edges  l light  space pause  r reset  q quit`,
+    );
   };
   tick();
-  setInterval(tick, 1000 / Math.max(1, Math.min(120, opts.fps)));
+  timer = setInterval(tick, 1000 / Math.max(1, Math.min(120, opts.fps)));
 }

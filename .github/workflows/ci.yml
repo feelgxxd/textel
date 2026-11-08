@@ -30,3 +30,5 @@ jobs:
           node dist/cli/main.js --version
           node dist/cli/main.js list
           node dist/cli/main.js --example donut --once --size 40x16 | grep -q '[@$#]'
+          node dist/cli/main.js render --example gem --size 40x16 --frames 8 -o "$RUNNER_TEMP/gem.textel.json"
+          node dist/cli/main.js play "$RUNNER_TEMP/gem.textel.json" --once | grep -q '[|/\-]'

@@ -31,6 +31,14 @@
     "./examples": {
       "types": "./dist/examples.d.ts",
       "default": "./dist/examples.js"
+    },
+    "./terminal": {
+      "types": "./dist/terminal.d.ts",
+      "default": "./dist/terminal.js"
+    },
+    "./frames": {
+      "types": "./dist/frames.d.ts",
+      "default": "./dist/frames.js"
     }
   },
   "files": [
