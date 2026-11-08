@@ -1,6 +1,6 @@
 {
   "name": "@feelgxxd/textel",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Turn 3D models into animated ASCII art for the terminal and the web.",
   "keywords": [
     "ascii",

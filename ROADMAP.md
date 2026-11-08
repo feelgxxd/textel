@@ -20,19 +20,19 @@ Each milestone ends with something people can use. Versions before 1.0 may chang
 
 ## Where things stand (November 2026)
 
-0.1 through 0.3 are done, and 0.4 is mostly done. textel works today as a **terminal tool, a library for
+0.1 through 0.4 are done. textel works today as a **terminal tool, a library for
 Node, a web player, a live web viewer and a playground site**, published on npm as `@feelgxxd/textel` and
 at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 
 | | |
 |---|---|
 | Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 77 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, 10 golden-frame snapshots) |
+| Tests | 79 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, 10 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
 | Web sizes | player 3.2 KB, viewer 11 KB, playground 19 KB (min+gzip) |
-| Published | `0.3.0` on npm; the playground deploys from `main` |
+| Published | `0.4.0` on npm; the playground deploys from `main` |
 
 ### What works
 - `textel <model>` spins a `.glb` / `.gltf` / `.obj` / `.stl` in the terminal, with keys for rotation,
@@ -51,7 +51,7 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | Item | Effect | Planned in |
 |---|---|---|
 | Live preview keys (`live.ts`) are only tested by hand; the screen and player under them are tested with fake streams | a key handling regression in preview would only show by hand | any time |
-| The viewer and playground have only been checked in desktop Chrome | phone behavior (touch turning, pinch, layout) is unverified | 0.4 |
+| Checked by hand in desktop Chrome and one phone browser only | Safari, Firefox and other phones may differ | 1.0 |
 | Examples `rocket` and `mug` read less clearly than the others | weaker first impression | any time |
 | Draco / meshopt glTF rejected; flat shading when a model has no normals | some real files look worse or do not load | 1.0 |
 
@@ -154,7 +154,7 @@ Checked by hand in desktop Chrome; a phone check is still open.
 
 ---
 
-## 0.4: playground (GitHub Pages)
+## 0.4: playground (GitHub Pages) ✅
 
 Built with Vite and plain TypeScript, using the viewer itself, so the site is also the viewer's test bench.
 Live at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
@@ -173,8 +173,9 @@ Live at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 - [x] Deployed from `main` by GitHub Actions to GitHub Pages; CI checks that the built site defines the viewer
 - [x] Examples load fast: `dice` meshes in under 0.2 s instead of 0.8 s
 - [x] Pinch zoom in the viewer
-- [ ] A check on a real phone (touch turning, panel layout, the benchmark page)
-- [ ] Nice to have: a live ramp preview next to the charset, a light handle on a sphere, an aspect control
+- [x] Checked on a real phone: touch turning, pinch zoom, the panels
+- [ ] Nice to have, moved to the backlog: a live ramp preview next to the charset, a light handle on a sphere,
+  an aspect control
 
 **Done when** someone with no tooling can go from a `.glb` to an embed snippet in under a minute.
 
@@ -225,6 +226,7 @@ Ideas that fit the project but are not on the path to 1.0. Value and effort are 
 | Idea | Value | Effort | Notes |
 |---|---|---|---|
 | Braille mode (2×4 dots per cell) | high | M | 8× the resolution; great for thin models |
+| Playground extras: live ramp preview next to the charset, light handle on a sphere, aspect control | medium | S | left over from 0.4 |
 | Half-block mode (two colored "pixels" per cell) | high | M | reads like pixel art; needs color |
 | Shape-matched glyphs | high | L | picks glyphs by the shape inside a cell, not only brightness; the biggest quality jump |
 | Play the model's own glTF animations | high | L | skinning and morph targets; turntable stays the default |
@@ -284,6 +286,6 @@ Made:
 
 ## Next session starts with
 
-1. A check of the playground on a real phone
-2. Release 0.4.0 (CHANGELOG, version, tag, npm)
-3. 0.5: exports
+1. 0.5: exports, starting with animated SVG (it works inside GitHub READMEs)
+2. GIF and MP4 from the playground
+3. Single-file HTML

@@ -106,7 +106,7 @@ textel render logo.glb --aspect 1.5 -o logo.textel.json
 ```
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.2/dist/textel-player.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.4/dist/textel-player.js"></script>
 <textel-player src="logo.textel.json"></textel-player>
 ```
 
@@ -132,7 +132,7 @@ or `::part(screen)`. From JavaScript: `player.play()`, `player.pause()`, `player
 ### `<textel-viewer>`
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.3/dist/textel-viewer.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.4/dist/textel-viewer.js"></script>
 <textel-viewer src="model.glb" charset="hard" color="#301000,#ffb000" edges></textel-viewer>
 ```
 

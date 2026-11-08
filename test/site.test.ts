@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  anglesFromLight, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles, needsPreset, presetJSON, PRESETS, type State,
+  anglesFromLight, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles, needsPreset, presetJSON, PRESETS, VERSION, type State,
 } from '../site/src/state.ts';
 
 const state = (look: State['look'], extra: Partial<State> = {}): State => ({ ...DEFAULT_STATE, look, ...extra });
@@ -28,7 +28,7 @@ test('site: snippets use attributes, and a preset file only when needed', () => 
   const simple = state({ charset: 'hard', color: ['#2a1400', '#ffb000'], edges: true, pitch: 0.3 });
   assert.equal(needsPreset(simple.look), false);
   const html = embedSnippet(simple, 'viewer', 'logo.glb');
-  assert.match(html, /<script type="module" src="https:\/\/cdn\.jsdelivr\.net\/npm\/@feelgxxd\/textel@0\.3\/dist\/textel-viewer\.js"><\/script>/);
+  assert.match(html, /<script type="module" src="https:\/\/cdn\.jsdelivr\.net\/npm\/@feelgxxd\/textel@[\d.]+\/dist\/textel-viewer\.js"><\/script>/);
   assert.match(html, /<textel-viewer src="logo\.glb" charset="hard" color="#2a1400,#ffb000" edges pitch="0\.3" style="[^"]+"><\/textel-viewer>/);
   assert.doesNotMatch(html, /preset=/);
 
@@ -70,4 +70,13 @@ test('site: every preset gallery entry uses a known charset and valid colors', a
   const b = new MeshBuilder();
   b.triangle(b.vertex(0, 0, 0), b.vertex(1, 0, 0), b.vertex(0, 1, 0), b.material('m'));
   for (const p of PRESETS) assert.doesNotThrow(() => createRenderer(b.build(), p.look), p.name);
+});
+
+test('site: snippets load the released version, and the README agrees', async () => {
+  const { readFileSync } = await import('node:fs');
+  const root = new URL('../', import.meta.url);
+  const pkg = JSON.parse(readFileSync(new URL('package.json', root), 'utf8')) as { version: string };
+  assert.equal(VERSION, pkg.version.split('.').slice(0, 2).join('.'), 'VERSION in site/src/state.ts follows package.json');
+  const readme = readFileSync(new URL('README.md', root), 'utf8');
+  for (const [, v] of readme.matchAll(/@feelgxxd\/textel@([\d.]+)\//g)) assert.equal(v, VERSION, 'CDN links in the README');
 });

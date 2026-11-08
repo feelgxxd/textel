@@ -4,7 +4,7 @@ All notable changes to textel. Versions follow [semantic versioning](https://sem
 the API may still change between minor versions. The frames file format has its own version
 (see [docs/format.md](docs/format.md)).
 
-## Unreleased
+## 0.4.0 (2026-11-09)
 
 ### Added
 - The playground at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/): load a model or an

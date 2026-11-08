@@ -2,7 +2,7 @@
 // share links, embed snippets, CLI commands. Tested in test/site.test.ts.
 import { CHARSETS, type StyleInput, type Vec3 } from '../../src/style.ts';
 
-export const VERSION = '0.3';
+export const VERSION = '0.4';
 export const CDN = `https://cdn.jsdelivr.net/npm/@feelgxxd/textel@${VERSION}/dist`;
 
 /** colors of the box around the picture, used by the preview and by the embed snippets */
