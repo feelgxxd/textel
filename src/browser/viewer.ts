@@ -11,6 +11,7 @@ import { drag, gridFor, step, styleFromAttributes, type Grid, type Motion } from
 
 const CSS = `:host{display:block;position:relative;overflow:hidden;aspect-ratio:var(--textel-ratio,1);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;outline:none}
 :host(:not([nodrag])){cursor:grab;touch-action:pan-y}
+:host([zoomable]:not([nodrag])){touch-action:none}
 :host(:not([nodrag]):active){cursor:grabbing}
 :host(:focus-visible){box-shadow:0 0 0 2px currentColor}
 pre{position:absolute;left:0;top:0;margin:0;transform-origin:0 0;font:inherit;font-size:16px;line-height:1;letter-spacing:0;white-space:pre;color:inherit;text-shadow:var(--textel-glow,none);-webkit-text-size-adjust:none;text-size-adjust:none;user-select:none;pointer-events:none}
@@ -62,7 +63,10 @@ export class TextelViewer extends Base {
   #raf = 0;
   #last = -1;
   #dirty = true;
-  #pointer: { x: number; y: number; t: number } | null = null;
+  #pointer: { id: number; x: number; y: number; t: number } | null = null;
+  /** every finger or pen on the element, for pinch zoom */
+  #touches = new Map<number, { x: number; y: number }>();
+  #pinch: { dist: number; zoom: number } | null = null;
   #load: AbortController | null = null;
   #io?: IntersectionObserver;
   #ro?: ResizeObserver;
@@ -271,27 +275,56 @@ export class TextelViewer extends Base {
 
   #onDown = (e: PointerEvent) => {
     if (this.hasAttribute('nodrag') || !this.#renderer || e.button !== 0) return;
-    this.#pointer = { x: e.clientX, y: e.clientY, t: performance.now() };
     this.setPointerCapture(e.pointerId);
+    this.#touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.#touches.size === 2 && this.hasAttribute('zoomable')) {
+      // a second finger: stop turning and pinch instead
+      this.#pinch = { dist: this.#spread(), zoom: this.#zoom };
+      this.#pointer = null;
+      this.#motion = { ...this.#motion, vyaw: 0, vpitch: 0 };
+    } else if (this.#touches.size === 1) {
+      this.#pointer = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() };
+    }
     this.#kick();
   };
 
   #onMove = (e: PointerEvent) => {
+    if (!this.#touches.has(e.pointerId)) return;
+    this.#touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.#pinch) {
+      if (this.#pinch.dist > 0) this.#setZoom(this.#pinch.zoom * (this.#spread() / this.#pinch.dist));
+      return;
+    }
     const p = this.#pointer;
-    if (!p) return;
+    if (!p || p.id !== e.pointerId) return;
     const now = performance.now();
     this.#motion = drag(this.#motion, e.clientX - p.x, e.clientY - p.y, (now - p.t) / 1000, this.clientWidth, MAX_PITCH);
-    this.#pointer = { x: e.clientX, y: e.clientY, t: now };
+    this.#pointer = { ...p, x: e.clientX, y: e.clientY, t: now };
     this.#kick();
   };
 
-  #onUp = () => {
-    if (!this.#pointer) return;
+  #onUp = (e: PointerEvent) => {
+    if (!this.#touches.delete(e.pointerId)) return;
+    if (this.#pinch) {
+      // lifting a finger ends the pinch; a finger still down turns the model again, without a flick
+      if (this.#touches.size < 2) this.#pinch = null;
+      const [rest] = [...this.#touches];
+      this.#pointer = rest && !this.#pinch ? { id: rest[0], ...rest[1], t: performance.now() } : null;
+      this.#kick();
+      return;
+    }
+    if (!this.#pointer || this.#pointer.id !== e.pointerId) return;
     // a pause before letting go means no flick
     if (performance.now() - this.#pointer.t > 80) this.#motion = { ...this.#motion, vyaw: 0, vpitch: 0 };
     this.#pointer = null;
     this.#kick();
   };
+
+  /** distance between the first two fingers, in pixels */
+  #spread() {
+    const [a, b] = [...this.#touches.values()];
+    return b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+  }
 
   #onKey = (e: KeyboardEvent) => {
     const m = this.#motion, step = 0.15;

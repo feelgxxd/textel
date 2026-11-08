@@ -11,6 +11,8 @@ the API may still change between minor versions. The frames file format has its 
   example, tune the look live, share it as a link, and export embeds, recorded loops, CLI commands and presets
 
 ### Changed
+- `<textel-viewer zoomable>` also zooms with a two-finger pinch on touch screens, and keeps vertical drags
+  for tilting instead of scrolling the page
 - The `dice` example builds about five times faster (from 0.8 s to under 0.2 s), with the same mesh
 
 ## 0.3.0 (2026-11-09)

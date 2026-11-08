@@ -152,7 +152,7 @@ background tabs and respects reduced motion.
 | `cols` | grid width in characters (default 96) |
 | `paused` | start without spinning |
 | `nodrag` | turn off dragging |
-| `zoomable` | wheel and `+` / `-` zoom |
+| `zoomable` | wheel, pinch and `+` / `-` zoom; on touch screens it takes all touches, so the page does not scroll over it |
 | `label` | accessible name |
 
 A preset is applied first, then the attributes, then `viewer.look = { ... }` from JavaScript.

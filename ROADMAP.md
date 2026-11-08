@@ -51,7 +51,7 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | Item | Effect | Planned in |
 |---|---|---|
 | Live preview keys (`live.ts`) are only tested by hand; the screen and player under them are tested with fake streams | a key handling regression in preview would only show by hand | any time |
-| The viewer has no pinch zoom, and has only been checked in desktop Chrome | touch users cannot zoom; phone behavior is unverified | 0.4 (the playground needs both) |
+| The viewer and playground have only been checked in desktop Chrome | phone behavior (touch turning, pinch, layout) is unverified | 0.4 |
 | Examples `rocket` and `mug` read less clearly than the others | weaker first impression | any time |
 | Draco / meshopt glTF rejected; flat shading when a model has no normals | some real files look worse or do not load | 1.0 |
 
@@ -172,7 +172,8 @@ Live at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 - [x] Narrow layout: preview on top, panels below
 - [x] Deployed from `main` by GitHub Actions to GitHub Pages; CI checks that the built site defines the viewer
 - [x] Examples load fast: `dice` meshes in under 0.2 s instead of 0.8 s
-- [ ] Pinch zoom in the viewer, and a check on a real phone (touch turning, panel layout, the benchmark page)
+- [x] Pinch zoom in the viewer
+- [ ] A check on a real phone (touch turning, panel layout, the benchmark page)
 - [ ] Nice to have: a live ramp preview next to the charset, a light handle on a sphere, an aspect control
 
 **Done when** someone with no tooling can go from a `.glb` to an embed snippet in under a minute.
@@ -283,6 +284,6 @@ Made:
 
 ## Next session starts with
 
-1. Pinch zoom in the viewer, then a check of the playground on a real phone
+1. A check of the playground on a real phone
 2. Release 0.4.0 (CHANGELOG, version, tag, npm)
 3. 0.5: exports

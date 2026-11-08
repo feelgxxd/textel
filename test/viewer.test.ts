@@ -153,6 +153,29 @@ test('viewer dom: space pauses at once, and plays again', async () => {
   el.remove();
 });
 
+test('viewer dom: two fingers pinch to zoom when zoomable', async () => {
+  const ink = (el: Viewer) => screen(el).textContent!.replace(/\s/g, '').length;
+  const finger = (el: Viewer, type: string, id: number, x: number) =>
+    el.dispatchEvent(new PointerEvent(type, { pointerId: id, clientX: x, clientY: 100, button: 0, bubbles: true }));
+  const pinch = (el: Viewer) => {
+    finger(el, 'pointerdown', 1, 100);
+    finger(el, 'pointerdown', 2, 140);
+    finger(el, 'pointermove', 2, 220); // twice as far apart
+    finger(el, 'pointerup', 2, 220);
+    finger(el, 'pointerup', 1, 100);
+  };
+  for (const zoomable of [true, false]) {
+    const el = mount({ paused: '', cols: '60', ...(zoomable ? { zoomable: '' } : {}) });
+    el.mesh = buildExample(EXAMPLES.find((e) => e.name === 'gem')!);
+    const before = ink(el);
+    pinch(el);
+    await new Promise((r) => setTimeout(r, 60));
+    if (zoomable) assert.ok(ink(el) > before * 1.5, `zoomed in: ${before} -> ${ink(el)}`);
+    else assert.ok(ink(el) < before * 1.5, `not zoomable, so no zoom: ${before} -> ${ink(el)}`);
+    el.remove();
+  }
+});
+
 test('viewer dom: errors are events, not exceptions', async () => {
   const el = mount();
   const failed = once(el, 'error');
