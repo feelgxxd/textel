@@ -30,7 +30,9 @@ Reads `.glb`, `.gltf`, `.obj` and `.stl`. Everything runs locally; nothing is up
 ## Terminal
 
 ```
-textel <model> [options]
+textel <model> [options]       spin it in the terminal (same as textel preview)
+textel list                    built-in examples and charsets
+textel help <command>          all options of a command
 
 look
   -c, --chars <ramp|name>   charset name or a custom ramp, darkest first
@@ -46,8 +48,6 @@ output
 ```
 
 Keys while it runs: `←→↑↓` rotate, `+/-` zoom, `c` charset, `e` edges, `l` light, `space` pause, `r` reset, `q` quit.
-
-`textel --list` shows the built-in examples and charsets.
 
 ## Presets
 

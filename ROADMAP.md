@@ -43,13 +43,14 @@ Each milestone ends with something people can use. Versions before 1.0 may chang
 
 Render once, play anywhere, without shipping the renderer.
 
-### 0.2.1 Housekeeping first
-- [ ] `.gitattributes` (`* text=auto eol=lf`) so the repo keeps LF line endings
-- [ ] GitHub Actions: `npm ci`, `tsc`, `npm test` on Windows, macOS, Linux (Node 20, 22, 24)
-- [ ] CLI restructured into subcommands, keeping `textel <model>` as the live preview:
-  `textel [preview] <model>`, `textel render`, `textel play`, `textel list`
-- [ ] Golden-frame tests: render each example at a fixed size and yaw, compare to a stored text snapshot
-  (catches unintended visual changes; `npm run snapshots` to update)
+### 0.2.1 Housekeeping first ✅
+- [x] `.gitattributes` (`* text=auto eol=lf`) so the repo keeps LF line endings
+- [x] GitHub Actions: `npm ci`, `tsc`, `npm test`, build and a CLI smoke test on Windows, macOS, Linux (Node 22, 24;
+  Node 20 reached end of life in April 2026 and cannot run the `.ts` tests directly)
+- [x] CLI restructured into subcommands, keeping `textel <model>` as the live preview:
+  `textel [preview] <model>`, `textel list`, `textel help <command>`; `render` and `play` slot in with 0.2.3
+- [x] Golden-frame tests: every example (and a few style variants) rendered at a fixed size and yaw, compared
+  to a stored text snapshot (catches unintended visual changes; `npm run snapshots` to update)
 
 ### 0.2.2 The `.textel.json` format
 A frames file is a looped animation, already rendered. Draft:
@@ -192,7 +193,7 @@ Built with Vite and plain TypeScript, using the viewer itself, so the site is al
 |---|---|
 | Testing | unit tests for loaders, format and math; golden-frame snapshots for visuals; size budget checks in CI |
 | Performance | track ms per frame for each example at 112×56 and 160×50 in a bench script; flag regressions |
-| Compatibility | Node 20+; evergreen browsers; terminals listed above |
+| Compatibility | Node 22+; evergreen browsers; terminals listed above |
 | Bundle sizes | player < 5 KB, viewer < 25 KB (min+gzip), checked in CI |
 
 ## Risks
@@ -207,5 +208,5 @@ Built with Vite and plain TypeScript, using the viewer itself, so the site is al
 
 ## Next session starts with
 
-1. 0.2.1 housekeeping: `.gitattributes`, CI workflow, CLI subcommands, golden-frame snapshots
-2. 0.2.2 format: encoder / decoder, round-trip tests, size measurements, then decide JSON vs binary
+1. 0.2.2 format: encoder / decoder, round-trip tests, size measurements, then decide JSON vs binary
+2. 0.2.3 `textel render` and `textel play` on top of it

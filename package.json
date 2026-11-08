@@ -5,7 +5,17 @@
   "type": "module",
   "license": "MIT",
   "author": "Berk Beken",
-  "keywords": ["ascii", "ascii-art", "3d", "terminal", "renderer", "gltf", "obj", "stl", "sdf"],
+  "keywords": [
+    "ascii",
+    "ascii-art",
+    "3d",
+    "terminal",
+    "renderer",
+    "gltf",
+    "obj",
+    "stl",
+    "sdf"
+  ],
   "bin": {
     "textel": "dist/cli/main.js"
   },
@@ -27,13 +37,14 @@
     "dist"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "node src/cli/main.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc",
-    "test": "node --test \"test/*.test.ts\""
+    "test": "node --test \"test/*.test.ts\"",
+    "snapshots": "node test/update-snapshots.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
