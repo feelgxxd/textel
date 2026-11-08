@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>textel viewer demo</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root { color-scheme: dark; --bg: #0e0f11; --panel: #16181b; --line: #2a2d32; --text: #d8dadf; --mute: #8b9099; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
+    h1 { font: 600 22px ui-monospace, monospace; margin: 0 0 4px; }
+    p { color: var(--mute); margin: 0 0 24px; }
+    a { color: inherit; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+    figcaption { color: var(--mute); font-size: 13px; margin-top: 8px; }
+    code { font: 13px ui-monospace, monospace; color: var(--text); }
+    textel-viewer { color: #e8e8e8; }
+    .glow { --textel-glow: 0 0 6px rgb(57 255 136 / 0.45); }
+    .wide { height: 220px; }
+    #drop { margin-top: 24px; border: 1px dashed var(--line); border-radius: 12px; padding: 16px; }
+    #drop.over { border-color: var(--text); }
+    #drop textel-viewer { margin-top: 12px; max-width: 640px; }
+    #log { font: 12px ui-monospace, monospace; color: var(--mute); white-space: pre-wrap; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>&lt;textel-viewer&gt;</h1>
+  <p>Models rendered live in the page. Drag in any direction and let go to flick; click one and use the
+    arrow keys. <a href="/">Player demo →</a></p>
+
+  <div class="grid">
+    <figure>
+      <textel-viewer src="/frames/models/gem.obj" charset="hard" edges="depth" pitch="0.35"></textel-viewer>
+      <figcaption><code>gem</code>: hard charset, depth edges</figcaption>
+    </figure>
+    <figure>
+      <textel-viewer src="/frames/models/rocket.obj" color="#2a1400,#ffb000" pitch="0.15"></textel-viewer>
+      <figcaption><code>rocket</code>: gradient color</figcaption>
+    </figure>
+    <figure>
+      <textel-viewer class="glow" src="/frames/models/planet.obj" color="#0b3d2e,#39ff88" edges zoomable></textel-viewer>
+      <figcaption><code>planet</code>: outline, glow, <code>zoomable</code> (wheel, + / -)</figcaption>
+    </figure>
+    <figure>
+      <textel-viewer src="/frames/models/dice.obj" charset="blocks" color="#7fdbff" spin="0" pitch="0.5"></textel-viewer>
+      <figcaption><code>dice</code>: blocks, <code>spin="0"</code>: only moves when dragged</figcaption>
+    </figure>
+    <figure>
+      <textel-viewer class="wide" src="/frames/models/mug.obj" cols="120" pitch="0.5"></textel-viewer>
+      <figcaption><code>mug</code>: wide box, <code>cols="120"</code></figcaption>
+    </figure>
+    <figure>
+      <textel-viewer src="/frames/models/donut.obj" color="#ff7ab6" nodrag></textel-viewer>
+      <figcaption><code>donut</code>: <code>nodrag</code></figcaption>
+    </figure>
+  </div>
+
+  <div id="drop">
+    Drop a <code>.glb</code>, <code>.obj</code> or <code>.stl</code> here to see it.
+    <textel-viewer id="dropped" hidden zoomable charset="hard" edges></textel-viewer>
+    <div id="log"></div>
+  </div>
+</main>
+
+<script type="module" src="/textel-viewer.js"></script>
+<script type="module">
+  const log = (s) => (document.getElementById('log').textContent += s + '\n');
+  for (const v of document.querySelectorAll('textel-viewer')) {
+    const name = () => v.getAttribute('src') ?? 'dropped file';
+    v.addEventListener('load', (e) => log(`${name()}: ${e.detail.triangles} triangles, materials: ${e.detail.materials.join(', ')}`));
+    v.addEventListener('error', (e) => log(`${name()}: ${e.detail.error.message}`));
+  }
+  const drop = document.getElementById('drop'), dropped = document.getElementById('dropped');
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    drop.classList.remove('over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    dropped.hidden = false;
+    await dropped.load(file);
+  });
+</script>
+</body>
+</html>

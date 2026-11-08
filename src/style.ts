@@ -66,6 +66,11 @@ export interface StyleInput {
   chars?: string;
   /** resting tilt toward the viewer, radians. Positive shows the top. */
   pitch?: number;
+  /**
+   * the model is fitted so it stays inside the grid for any pitch up to this (radians, either way);
+   * default: just the resting pitch. Viewers that let people tilt the model set it higher.
+   */
+  fitPitch?: number;
   /** auto-rotation speed around the vertical axis, radians per second (players use it, the renderer does not) */
   spin?: number;
   /** camera distance in model radii; smaller is more perspective */
@@ -99,6 +104,7 @@ export interface Style {
   aspect: number;
   chars: string[];
   pitch: number;
+  fitPitch: number;
   spin: number;
   distance: number;
   zoom: number;
@@ -168,6 +174,7 @@ export function resolveStyle(input: StyleInput = {}): Style {
     aspect: num(input.aspect, DEFAULTS.aspect, 0.25, 8),
     chars: resolveRamp(input.chars, input.charset),
     pitch: num(input.pitch, DEFAULTS.pitch),
+    fitPitch: Math.abs(num(input.fitPitch, 0, 0, Math.PI / 2)),
     spin: num(input.spin, DEFAULTS.spin),
     distance: num(input.distance, DEFAULTS.distance, 1.5, 1000),
     zoom: num(input.zoom, DEFAULTS.zoom, 0.01, 100),

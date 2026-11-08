@@ -51,11 +51,17 @@
     "./player": {
       "types": "./dist/browser/player.d.ts",
       "default": "./dist/textel-player.js"
+    },
+    "./viewer": {
+      "types": "./dist/browser/viewer.d.ts",
+      "default": "./dist/textel-viewer.js"
     }
   },
   "sideEffects": [
     "./dist/browser/player.js",
-    "./dist/textel-player.js"
+    "./dist/textel-player.js",
+    "./dist/browser/viewer.js",
+    "./dist/textel-viewer.js"
   ],
   "files": [
     "dist"

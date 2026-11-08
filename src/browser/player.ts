@@ -59,15 +59,15 @@ export class TextelPlayer extends Base {
       this.#ro = new ResizeObserver(() => this.#fit());
       this.#ro.observe(this);
     }
-    document.addEventListener('visibilitychange', this.#kick);
-    document.fonts?.ready.then(() => this.#fit());
+    this.ownerDocument.addEventListener('visibilitychange', this.#kick);
+    this.ownerDocument.fonts?.ready.then(() => this.#fit());
     this.#kick();
   }
 
   disconnectedCallback() {
     this.#io?.disconnect();
     this.#ro?.disconnect();
-    document.removeEventListener('visibilitychange', this.#kick);
+    this.ownerDocument.removeEventListener('visibilitychange', this.#kick);
     cancelAnimationFrame(this.#raf);
     this.#raf = 0;
   }
@@ -152,7 +152,7 @@ export class TextelPlayer extends Base {
 
   /** runs the animation only while it is playing, on screen and in a visible tab */
   #kick = () => {
-    const run = this.#playing && this.#visible && !document.hidden && !!this.#rec && !this.#drag && this.isConnected;
+    const run = this.#playing && this.#visible && !this.ownerDocument.hidden && !!this.#rec && !this.#drag && this.isConnected;
     if (run && !this.#raf) {
       // the first tick only sets the clock: time is measured between frame timestamps alone,
       // never mixed with performance.now(), whose reading can be later than the next frame's

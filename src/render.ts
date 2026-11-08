@@ -100,8 +100,12 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
 
   /** focal length in samples: the model fits the grid at any yaw, at the resting pitch */
   function focal(): number {
-    const D = style.distance, p = Math.abs(style.pitch);
-    const hx = Math.max(rxz, 1e-3), hy = Math.max(ry * Math.cos(p) + rxz * Math.sin(p), 1e-3);
+    const D = style.distance;
+    // vertical half extent ry·cos p + rxz·sin p, at its largest over the pitches that must fit;
+    // it peaks at p = atan(rxz / ry), so check that point when it is inside the range
+    const lo = Math.abs(style.pitch), hi = Math.max(lo, style.fitPitch), peak = Math.atan2(rxz, ry);
+    const extent = (p: number) => ry * Math.cos(p) + rxz * Math.sin(p);
+    const hx = Math.max(rxz, 1e-3), hy = Math.max(peak > lo && peak < hi ? Math.hypot(ry, rxz) : Math.max(extent(lo), extent(hi)), 1e-3);
     // largest x/z a circle of radius r at distance D reaches, with perspective
     const tx = hx / Math.sqrt(D * D - Math.min(hx * hx, D * D * 0.99));
     const ty = hy / Math.sqrt(D * D - 1);

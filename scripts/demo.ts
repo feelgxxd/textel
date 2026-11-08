@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { buildExample, EXAMPLES } from '../src/examples.ts';
 import { recordLoop, stringifyFrames } from '../src/frames.ts';
 import { createRenderer } from '../src/render.ts';
+import type { Mesh } from '../src/mesh.ts';
 import { mergeStyles, type StyleInput } from '../src/style.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -29,10 +30,30 @@ for (const f of FILES) {
   console.log(`rendered ${f.name}.textel.json (${(json.length / 1024).toFixed(0)} KB)`);
 }
 
-const TYPES: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json' };
+// the examples as .obj files, so the viewer loads them like any model file
+const modelsDir = join(framesDir, 'models');
+mkdirSync(modelsDir, { recursive: true });
+function toOBJ(m: Mesh): string {
+  const out: string[] = [];
+  for (let i = 0; i < m.positions.length; i += 3) out.push(`v ${m.positions[i].toFixed(4)} ${m.positions[i + 1].toFixed(4)} ${m.positions[i + 2].toFixed(4)}`);
+  if (m.normals) for (let i = 0; i < m.normals.length; i += 3) out.push(`vn ${m.normals[i].toFixed(3)} ${m.normals[i + 1].toFixed(3)} ${m.normals[i + 2].toFixed(3)}`);
+  let mat = -1;
+  for (let t = 0; t < m.indices.length / 3; t++) {
+    if (m.triMaterial[t] !== mat) { mat = m.triMaterial[t]; out.push(`usemtl ${m.materials[mat]}`); }
+    const f = [0, 1, 2].map((k) => m.indices[t * 3 + k] + 1).map((v) => (m.normals ? `${v}//${v}` : String(v)));
+    out.push(`f ${f.join(' ')}`);
+  }
+  return out.join('\n') + '\n';
+}
+for (const ex of EXAMPLES) writeFileSync(join(modelsDir, `${ex.name}.obj`), toOBJ(buildExample(ex)));
+console.log(`wrote ${EXAMPLES.length} example models as .obj`);
+
+const TYPES: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.obj': 'text/plain' };
 const routes: Record<string, string> = {
   '/': join(root, 'examples', 'player.html'),
+  '/viewer': join(root, 'examples', 'viewer.html'),
   '/textel-player.js': join(root, 'dist', 'textel-player.js'),
+  '/textel-viewer.js': join(root, 'dist', 'textel-viewer.js'),
 };
 
 const server = createServer((req, res) => {
@@ -57,5 +78,5 @@ server.on('error', (e: NodeJS.ErrnoException) => {
   if (e.code === 'EADDRINUSE' && port < 5200) server.listen(++port, '127.0.0.1');
   else throw e;
 });
-server.on('listening', () => console.log(`\ndemo: http://127.0.0.1:${port}/  (Ctrl+C to stop)`));
+server.on('listening', () => console.log(`\nplayer demo: http://127.0.0.1:${port}/\nviewer demo: http://127.0.0.1:${port}/viewer\n(Ctrl+C to stop)`));
 server.listen(port, '127.0.0.1');

@@ -6,6 +6,7 @@ import { gzipSync } from 'node:zlib';
 
 const ENTRIES = [
   { in: 'src/browser/player.ts', out: 'dist/textel-player.js', budget: 5 * 1024 },
+  { in: 'src/browser/viewer.ts', out: 'dist/textel-viewer.js', budget: 12 * 1024 },
 ];
 
 const checkOnly = process.argv.includes('--check');
