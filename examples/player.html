@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>textel player demo</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root { color-scheme: dark; --bg: #0e0f11; --panel: #16181b; --line: #2a2d32; --text: #d8dadf; --mute: #8b9099; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
+    h1 { font: 600 22px ui-monospace, monospace; margin: 0 0 4px; }
+    p { color: var(--mute); margin: 0 0 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+    figcaption { color: var(--mute); font-size: 13px; margin-top: 8px; }
+    code { font: 13px ui-monospace, monospace; color: var(--text); }
+    textel-player { color: #e8e8e8; }
+    .glow { --textel-glow: 0 0 6px rgb(255 176 0 / 0.5); }
+    .tall { height: 260px; }
+    .serif { font-family: "Courier New", monospace; }
+    #drop { margin-top: 24px; border: 1px dashed var(--line); border-radius: 12px; padding: 16px; }
+    #drop.over { border-color: var(--text); }
+    #drop textel-player { margin-top: 12px; }
+    #log { font: 12px ui-monospace, monospace; color: var(--mute); white-space: pre-wrap; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>&lt;textel-player&gt;</h1>
+  <p>Each one is a <code>.textel.json</code> file played without any 3D code. Drag horizontally to scrub.</p>
+
+  <div class="grid">
+    <figure>
+      <textel-player src="/frames/gem.textel.json"></textel-player>
+      <figcaption><code>gem</code>: no color, inherits the page color</figcaption>
+    </figure>
+    <figure>
+      <textel-player class="glow" src="/frames/rocket-amber.textel.json"></textel-player>
+      <figcaption><code>rocket</code>: gradient, <code>--textel-glow</code></figcaption>
+    </figure>
+    <figure>
+      <textel-player src="/frames/donut.textel.json" color="#ff7ab6"></textel-player>
+      <figcaption><code>donut</code>: rendered for aspect 1.5, <code>color</code> attribute</figcaption>
+    </figure>
+    <figure>
+      <textel-player class="tall" src="/frames/dice-blocks.textel.json"></textel-player>
+      <figcaption><code>dice</code>: blocks charset, fixed height box</figcaption>
+    </figure>
+    <figure>
+      <textel-player class="serif" src="/frames/planet-edges.textel.json" fps="15" nodrag></textel-player>
+      <figcaption><code>planet</code>: another font, <code>fps="15"</code>, <code>nodrag</code></figcaption>
+    </figure>
+    <figure>
+      <textel-player id="manual" src="/frames/gem.textel.json" paused></textel-player>
+      <figcaption><code>paused</code>; <button id="toggle">play</button> <button id="next">next frame</button></figcaption>
+    </figure>
+  </div>
+
+  <div id="drop">
+    Drop your own <code>.textel.json</code> here (from <code>textel render</code>).
+    <textel-player id="dropped" hidden></textel-player>
+    <div id="log"></div>
+  </div>
+</main>
+
+<script type="module" src="/textel-player.js"></script>
+<script type="module">
+  const log = (s) => (document.getElementById('log').textContent += s + '\n');
+  for (const p of document.querySelectorAll('textel-player')) {
+    p.addEventListener('load', (e) => log(`${p.getAttribute('src') ?? 'dropped file'}: ${e.detail.frames} frames`));
+    p.addEventListener('error', (e) => log(`${p.getAttribute('src') ?? 'dropped file'}: ${e.detail.error.message}`));
+  }
+  const manual = document.getElementById('manual');
+  document.getElementById('toggle').onclick = (e) => {
+    manual.paused ? manual.play() : manual.pause();
+    e.target.textContent = manual.paused ? 'play' : 'pause';
+  };
+  document.getElementById('next').onclick = () => { manual.pause(); manual.frame += 1; };
+
+  const drop = document.getElementById('drop'), dropped = document.getElementById('dropped');
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    drop.classList.remove('over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    try {
+      dropped.recording = JSON.parse(await file.text());
+      dropped.hidden = false;
+      log(`${file.name}: ${dropped.recording.frames.length} frames, ${dropped.recording.width}x${dropped.recording.height}`);
+    } catch (err) {
+      log(`${file.name}: ${err.message}`);
+    }
+  });
+</script>
+</body>
+</html>

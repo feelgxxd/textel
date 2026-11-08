@@ -20,18 +20,17 @@ Each milestone ends with something people can use. Versions before 1.0 may chang
 
 ## Where things stand (November 2026)
 
-Four milestones are done: 0.1, 0.2.1, 0.2.2 and 0.2.3. textel works today as a **terminal tool and a library
-for Node**; nothing runs in a browser yet, and nothing is published.
+Five milestones are done: 0.1, 0.2.1, 0.2.2, 0.2.3 and 0.2.4. textel works today as a **terminal tool, a library for Node and a web player**; nothing is published yet.
 
 | | |
 |---|---|
 | Code | ~2,500 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 50 (loaders, meshing, rendering, frames format, terminal player, CLI, 10 golden-frame snapshots) |
+| Tests | 61 (loaders, meshing, rendering, frames format, terminal player, CLI, web player in happy-dom, 10 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Frames files | 120 frames at 112×56, gzipped: 47 KB average without color, 93 KB with a gradient |
 | Core size | 22.8 KB gzip for all of `dist` except the CLI, unminified, examples and SDF included |
-| Published | no: private repo, version `0.1.0` in `package.json`, no npm release, no tags |
+| Published | version `0.2.0` prepared and tagged; npm release and public repo are the next manual steps |
 
 ### What works
 - `textel <model>` spins a `.glb` / `.gltf` / `.obj` / `.stl` in the terminal, with keys for rotation,
@@ -46,10 +45,8 @@ for Node**; nothing runs in a browser yet, and nothing is published.
 | Item | Effect | Planned in |
 |---|---|---|
 | Live preview keys (`live.ts`) are only tested by hand; the screen and player under them are tested with fake streams | a key handling regression in preview would only show by hand | any time |
-| Decoded frames use two `Uint16Array`s per frame (~3 MB for 120 frames at 112×56) | heavy for the web player | 0.2.4 (`Uint8Array` when palettes fit, or decode on demand) |
 | `dice` example takes ~0.8 s to mesh | slow start where it is built at runtime | 0.3 (faster field, or ship examples pre-meshed) |
 | Fit uses the resting pitch only | dragging far up or down can clip the model | 0.3 |
-| No browser build or browser tests | the web milestones need both | 0.2.4 |
 | Core size is near the viewer budget before minifying | the 25 KB target is tight | 0.3 (measure minified, keep examples / SDF out of the viewer bundle) |
 | Examples `rocket` and `mug` read less clearly than the others | weaker first impression | any time |
 | Draco / meshopt glTF rejected; flat shading when a model has no normals | some real files look worse or do not load | 1.0 |
@@ -90,34 +87,38 @@ matches the frame `preview` draws for the same settings.
 
 ---
 
-## Next: 0.2.4 `<textel-player>` for the web
+## 0.2.4 `<textel-player>` for the web ✅
 
-The first thing that runs in a browser. Effort: **one to two sessions**.
+The first thing that runs in a browser.
 
 ### Build
-- [ ] esbuild as a dev dependency; `npm run build` emits `dist/browser/player.js` (ES module, minified)
-- [ ] Package export `textel/player`, plus the single file for CDNs (`https://cdn.jsdelivr.net/npm/textel/...`)
-- [ ] Size check in CI: fail above 5 KB min+gzip
+- [x] esbuild as a dev dependency; `npm run build` emits `dist/textel-player.js` (ES module, minified, one file)
+- [x] Package export `textel/player`; the same file works from a CDN
+- [x] Size check: the build fails above 5 KB min+gzip (currently **3.2 KB**); `npm run size` checks without building
 
 ### Element
-- [ ] `<textel-player src="logo.textel.json">` custom element; or `.recording = ...` set from JS
-- [ ] Attributes: `src`, `fps`, `autoplay` (default on), `drag` (horizontal drag scrubs the loop), `color`
-  (default color for colorless files), `label` (overrides `meta.title`)
-- [ ] Renders into one `<pre>`, one text node per row; styles as `<span>`s only when the file has them
-- [ ] Scales the `<pre>` to fit its box (transform, so small fonts are not rounded by phone browsers)
-- [ ] CSS hooks: `font`, `color`, `--textel-dim-opacity`, `--textel-glow`
-- [ ] Pauses off screen (IntersectionObserver) and in hidden tabs; frame-rate independent timing
-- [ ] `prefers-reduced-motion`: shows a still frame, drag still works
-- [ ] `role="img"` and `aria-label`; `load` and `error` events
+- [x] `<textel-player src="logo.textel.json">` custom element in a shadow root; or `.recording = json` from JS
+- [x] Attributes: `src`, `fps`, `paused`, `nodrag` (drag scrubs by default), `color`, `label`
+- [x] Plain text for colorless files, `<span>`s only when the file has styles; markup cached per frame
+- [x] Fits its box with a transform, and stretches the font's cells to the aspect the file was rendered for,
+  so proportions hold in any font; height follows from the width unless the box sets one
+- [x] CSS hooks: `font-family`, `color`, `--textel-dim-opacity`, `--textel-glow`, `::part(screen)`
+- [x] Runs only while playing, on screen and in a visible tab; frame-rate independent timing
+- [x] `prefers-reduced-motion`: starts paused, drag still works
+- [x] `role="img"` and `aria-label`; `load` and `error` events
+- [x] Decoding uses one byte per cell when the palettes fit (half the memory); the format code moved to
+  `src/format.ts` with no dependencies, so the player carries no renderer code
 
 ### Tests and demo
-- [ ] Decoder tests already cover the format; add DOM tests for the element (happy-dom or a headless browser, see decisions)
-- [ ] `examples/player.html`: a plain page that loads a few frames files; used by hand and in CI
+- [x] Tests for the DOM-free logic: markup, escaping, timing, scrubbing, fit, labels
+- [x] DOM tests for the element in happy-dom: drawing, styles, play / pause / frame, drag and `nodrag`, `src` with `load` / `error`
+- [x] `examples/player.html` + `npm run demo`: five players with different looks, fonts and attributes,
+  and a drop zone for your own files
 
 **Done when** a file from `textel render` plays the same in `textel play` and `<textel-player>`, and the
 player is under 5 KB.
 
-**Release point**: tag `v0.2.0` here. This is the first version worth publishing (see decisions).
+**Release point**: `v0.2.0`, the first public version. Checked by hand in a desktop browser; see CHANGELOG.md.
 
 ---
 
@@ -230,14 +231,22 @@ Ideas that fit the project but are not on the path to 1.0. Value and effort are 
 
 ---
 
-## Open decisions
+## Decisions
+
+Made:
+
+| Decision | Choice | Why |
+|---|---|---|
+| Frames container | JSON + base64 | sizes are well under target; readable, embeddable, compressed by static hosts |
+| When to publish to npm | at 0.2.0 | claims the name and lets people try it; 0.x signals that the API may change |
+| When to make the repo public | with the first npm release | npm pages link to the repo |
+| Browser tests | happy-dom for the elements, Playwright later for the playground | fast tests in Node now; a real browser once there is a site |
+| Default aspect for `textel render` | 2 (terminals) | the player stretches to the file's aspect in any font; `--aspect` documented for web use |
+
+Still open:
 
 | Decision | Options | Recommendation | Needed by |
 |---|---|---|---|
-| When to publish to npm | at 0.2.0 (player ready) / at 1.0 | **0.2.0**: claims the name and lets people try it; 0.x signals that the API may change | 0.2.4 |
-| When to make the repo public | with the first npm release / at 1.0 | **with the first npm release**: npm pages link to the repo | 0.2.4 |
-| Browser tests | happy-dom in Node / Playwright headless | **happy-dom** for the elements, **Playwright** later for the playground | 0.2.4 |
-| Default aspect for `textel render` | 2 (terminal) / 1.5 (common web fonts) | **2**, and document `--aspect` for web use; the viewer measures its own | 0.2.3 |
 | Playground framework | plain TypeScript / a small framework | **plain TypeScript** with Vite; the site is small and uses the custom elements | 0.4 |
 | Custom domain for the playground | GitHub Pages URL / own domain | decide at 0.4; GitHub Pages works first | 0.4 |
 
@@ -267,5 +276,5 @@ Ideas that fit the project but are not on the path to 1.0. Value and effort are 
 
 ## Next session starts with
 
-1. 0.2.4: esbuild, `<textel-player>`, size check, demo page
-2. Then the decisions due at 0.2.4: npm publish, public repo, browser test tool
+1. Check that v0.2.0 is live on npm and the CDN, and the repo is public
+2. 0.3: `<textel-viewer>`, starting with glyph measurement and the bundle size of core + loaders

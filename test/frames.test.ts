@@ -11,10 +11,14 @@ import { mergeStyles, type StyleInput } from '../src/style.ts';
 
 const same = (a: Recording, b: Recording) => {
   assert.equal(b.frames.length, a.frames.length);
+  // values, not array types: decoding uses one byte per cell when the palette allows it
+  const vals = (x: ArrayLike<number> | null) => (x ? Array.from(x) : null);
   for (let f = 0; f < a.frames.length; f++) {
-    assert.deepEqual(b.frames[f].glyph, a.frames[f].glyph, `glyphs of frame ${f}`);
-    assert.deepEqual(b.frames[f].style, a.frames[f].style, `styles of frame ${f}`);
+    assert.deepEqual(vals(b.frames[f].glyph), vals(a.frames[f].glyph), `glyphs of frame ${f}`);
+    assert.deepEqual(vals(b.frames[f].style), vals(a.frames[f].style), `styles of frame ${f}`);
   }
+  const small = b.glyphs.length <= 256;
+  assert.equal(b.frames[0].glyph instanceof Uint8Array, small, 'glyph array width follows the palette size');
 };
 
 const meshes = new Map(EXAMPLES.map((e) => [e.name, buildExample(e)]));

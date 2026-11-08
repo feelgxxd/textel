@@ -1,10 +1,7 @@
 {
   "name": "textel",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Turn 3D models into animated ASCII art for the terminal and the web.",
-  "type": "module",
-  "license": "MIT",
-  "author": "Berk Beken",
   "keywords": [
     "ascii",
     "ascii-art",
@@ -16,6 +13,17 @@
     "stl",
     "sdf"
   ],
+  "homepage": "https://github.com/feelgxxd/textel#readme",
+  "bugs": {
+    "url": "https://github.com/feelgxxd/textel/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/feelgxxd/textel.git"
+  },
+  "license": "MIT",
+  "author": "Berk Beken",
+  "type": "module",
   "bin": {
     "textel": "dist/cli/main.js"
   },
@@ -39,8 +47,16 @@
     "./frames": {
       "types": "./dist/frames.d.ts",
       "default": "./dist/frames.js"
+    },
+    "./player": {
+      "types": "./dist/browser/player.d.ts",
+      "default": "./dist/textel-player.js"
     }
   },
+  "sideEffects": [
+    "./dist/browser/player.js",
+    "./dist/textel-player.js"
+  ],
   "files": [
     "dist"
   ],
@@ -49,13 +65,19 @@
   },
   "scripts": {
     "dev": "node src/cli/main.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/build-browser.ts",
     "typecheck": "tsc",
     "test": "node --test \"test/*.test.ts\"",
-    "snapshots": "node test/update-snapshots.ts"
+    "snapshots": "node test/update-snapshots.ts",
+    "size": "node scripts/build-browser.ts --check",
+    "demo": "node scripts/build-browser.ts && node scripts/demo.ts",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
+    "@happy-dom/global-registrator": "^21.0.4",
     "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2",
+    "happy-dom": "^21.0.4",
     "typescript": "^5.9.0"
   }
 }

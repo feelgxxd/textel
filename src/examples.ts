@@ -24,7 +24,12 @@ const soft = (pitch: number): StyleInput => ({ ...LOOK, charset: 'classic', ligh
 
 // ---------- donut: the classic ----------
 function* donut() {
-  return yield* sdfToMeshSteps((x, y, z) => sdTorus(x, y, z, 1, 0.45), { min: [-1.5, -0.5, -1.5], max: [1.5, 0.5, 1.5], step: 0.03 });
+  // a torus is symmetric around its own axis, so spinning it flat would look still: the ring is
+  // tilted 60° off the spin axis, and the turntable makes it tumble like donut.c
+  const t = Math.PI / 3, c = Math.cos(t), s = Math.sin(t);
+  return yield* sdfToMeshSteps((x, y, z) => sdTorus(x, y * c - z * s, y * s + z * c, 1, 0.45), {
+    min: [-1.5, -1.5, -1.5], max: [1.5, 1.5, 1.5], step: 0.03,
+  });
 }
 
 // ---------- dice: carved pips ----------
@@ -152,7 +157,7 @@ function* gem() {
 }
 
 export const EXAMPLES: Example[] = [
-  { name: 'donut', title: 'DONUT', description: 'the classic torus', style: { charset: 'classic', pitch: 0.9 }, build: donut },
+  { name: 'donut', title: 'DONUT', description: 'the classic torus', style: { charset: 'classic', pitch: 0.2 }, build: donut },
   { name: 'dice', title: 'DICE', description: 'a die with carved pips', style: hard(0.45), build: dice },
   { name: 'rocket', title: 'ROCKET', description: 'thin fins and a porthole', style: soft(0.15), build: rocket },
   { name: 'planet', title: 'PLANET', description: 'a globe with a tilted ring', style: soft(0.25), build: planet },

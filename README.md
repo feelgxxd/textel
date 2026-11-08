@@ -73,6 +73,40 @@ await playSplash('logo.textel.json', { seconds: 2 }); // any key skips it
 `AbortSignal`, the output stream. Both restore the terminal however playback ends, and print a single
 frame when the output is not a terminal.
 
+## On a web page
+
+Record once, then play the file with `<textel-player>`: about 3 KB, no 3D code in the page.
+
+```sh
+textel render logo.glb --aspect 1.5 -o logo.textel.json
+```
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/textel@0.2/dist/textel-player.js"></script>
+<textel-player src="logo.textel.json"></textel-player>
+```
+
+Or from npm in a bundled app: `npm install textel`, then `import 'textel/player'`.
+
+It fills its width and keeps the proportions the file was rendered for, whatever the page font.
+Drag sideways to scrub. It pauses off screen and in background tabs, shows a still frame when the
+visitor prefers reduced motion, and is labeled for screen readers.
+
+| attribute | |
+|---|---|
+| `src` | the `.textel.json` file |
+| `fps` | playback rate; default from the file |
+| `paused` | start paused |
+| `nodrag` | turn off drag to scrub |
+| `color` | default color for cells without one; otherwise the element's CSS `color` |
+| `label` | accessible name; default from the file's title |
+
+Style it with CSS: `font-family`, `color`, `--textel-glow` (a `text-shadow`), `--textel-dim-opacity`,
+or `::part(screen)`. From JavaScript: `player.play()`, `player.pause()`, `player.frame`,
+`player.recording = json`, and the `load` and `error` events.
+
+`npm run demo` serves a page with several players and a drop zone for your own files.
+
 ## Presets
 
 A preset is the whole look in one JSON file. The same file works with the CLI and the library.
