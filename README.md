@@ -20,10 +20,12 @@ Turn 3D models into animated ASCII art, in the terminal and on the web.
 ```
 
 ```sh
-npx textel model.glb                   # spins in your terminal
-npx textel --example gem               # built-in scenes: donut, dice, rocket, planet, mug, gem
-npx textel model.stl --once > art.txt  # one frame as plain text
+npx @feelgxxd/textel model.glb                   # spins in your terminal
+npx @feelgxxd/textel --example gem               # built-in scenes: donut, dice, rocket, planet, mug, gem
+npx @feelgxxd/textel model.stl --once > art.txt  # one frame as plain text
 ```
+
+Install it once with `npm install -g @feelgxxd/textel` and the command is just `textel`. Needs Node 22 or newer.
 
 Reads `.glb`, `.gltf`, `.obj` and `.stl`. Everything runs locally; nothing is uploaded.
 
@@ -64,7 +66,7 @@ The format is documented in [docs/format.md](docs/format.md).
 ### In your own CLI
 
 ```ts
-import { playSplash } from 'textel/terminal';
+import { playSplash } from '@feelgxxd/textel/terminal';
 
 await playSplash('logo.textel.json', { seconds: 2 }); // any key skips it
 ```
@@ -82,11 +84,11 @@ textel render logo.glb --aspect 1.5 -o logo.textel.json
 ```
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/textel@0.2/dist/textel-player.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.2/dist/textel-player.js"></script>
 <textel-player src="logo.textel.json"></textel-player>
 ```
 
-Or from npm in a bundled app: `npm install textel`, then `import 'textel/player'`.
+Or from npm in a bundled app: `npm install @feelgxxd/textel`, then `import '@feelgxxd/textel/player'`.
 
 It fills its width and keeps the proportions the file was rendered for, whatever the page font.
 Drag sideways to scrub. It pauses off screen and in background tabs, shows a still frame when the
@@ -137,7 +139,7 @@ Charsets: `classic`, `hard`, `detailed`, `blocks`, `dots`, `minimal`, or any str
 ## Library
 
 ```ts
-import { parseModel, createRenderer, toANSI, toHTML, toText } from 'textel';
+import { parseModel, createRenderer, toANSI, toHTML, toText } from '@feelgxxd/textel';
 
 const mesh = parseModel(bytes, 'model.glb');
 const renderer = createRenderer(mesh, { width: 112, height: 56, aspect: 1.5, charset: 'hard' });
@@ -149,10 +151,10 @@ process.stdout.write(toANSI(frame).join('\n'));  // terminal
 
 ### Shapes in code
 
-`textel/sdf` meshes signed distance fields, so a scene can be written as a function instead of modeled:
+`@feelgxxd/textel/sdf` meshes signed distance fields, so a scene can be written as a function instead of modeled:
 
 ```ts
-import { sdfToMesh, sdBox, sdSphere } from 'textel/sdf';
+import { sdfToMesh, sdBox, sdSphere } from '@feelgxxd/textel/sdf';
 
 const mesh = sdfToMesh(
   (x, y, z) => Math.max(sdBox(x, y, z, 1, 1, 1, 0.1), -sdSphere(x, y, z, 1.25)),

@@ -30,15 +30,15 @@ Five milestones are done: 0.1, 0.2.1, 0.2.2, 0.2.3 and 0.2.4. textel works today
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Frames files | 120 frames at 112×56, gzipped: 47 KB average without color, 93 KB with a gradient |
 | Core size | 22.8 KB gzip for all of `dist` except the CLI, unminified, examples and SDF included |
-| Published | version `0.2.0` prepared and tagged; npm release and public repo are the next manual steps |
+| Published | version `0.2.0` tagged; published to npm as `@feelgxxd/textel` |
 
 ### What works
 - `textel <model>` spins a `.glb` / `.gltf` / `.obj` / `.stl` in the terminal, with keys for rotation,
   zoom, charset, edges, light; `--once` prints one frame; presets and style flags
 - `textel render` records a loop into a `.textel.json` file; `textel play` plays it (pause, step, speed)
 - `textel list`, `textel help <command>`
-- Library: `parseModel`, `createRenderer`, `toText` / `toANSI` / `toHTML`, `textel/sdf`,
-  `recordLoop` / `stringifyFrames` / `parseFrames`, `textel/terminal` (`play`, `playSplash`)
+- Library: `parseModel`, `createRenderer`, `toText` / `toANSI` / `toHTML`, `@feelgxxd/textel/sdf`,
+  `recordLoop` / `stringifyFrames` / `parseFrames`, `@feelgxxd/textel/terminal` (`play`, `playSplash`)
 - Built-in examples: donut, dice, rocket, planet, mug, gem
 
 ### Known issues and debt
@@ -71,7 +71,7 @@ Turns the frames format into something people use from the terminal.
 - [x] Centers the grid if the terminal is bigger, warns once if it is smaller
 - [x] `--once` prints one frame (`--frame <n>`), useful in scripts and for tests
 
-### `textel/terminal` (library)
+### `@feelgxxd/textel/terminal` (library)
 - [x] `play(recording, { output, input, loop, seconds, signal })` returns a promise; used by `textel play` itself
 - [x] `playSplash(file, { seconds = 2 })`: shows a spinning logo in another CLI, then restores the screen
 - [x] Respects `NO_COLOR`, non-TTY output (prints one frame instead) and Ctrl+C
@@ -93,7 +93,7 @@ The first thing that runs in a browser.
 
 ### Build
 - [x] esbuild as a dev dependency; `npm run build` emits `dist/textel-player.js` (ES module, minified, one file)
-- [x] Package export `textel/player`; the same file works from a CDN
+- [x] Package export `@feelgxxd/textel/player`; the same file works from a CDN
 - [x] Size check: the build fails above 5 KB min+gzip (currently **3.2 KB**); `npm run size` checks without building
 
 ### Element
@@ -203,7 +203,7 @@ Effort: **three to four sessions**, spread over the milestones above where possi
 - [ ] Terminal compatibility notes: Windows Terminal, conhost, macOS Terminal, iTerm2, GNOME Terminal, kitty, Alacritty
 - [ ] CONTRIBUTING, code of conduct, issue and PR templates, CHANGELOG
 - [ ] Semantic versioning from here on; the frames format keeps its own version
-- [ ] Repo public (if not earlier) and `textel@1.0.0` on npm
+- [ ] Repo public (if not earlier) and `@feelgxxd/textel@1.0.0` on npm
 
 ---
 
@@ -241,6 +241,7 @@ Made:
 | When to publish to npm | at 0.2.0 | claims the name and lets people try it; 0.x signals that the API may change |
 | When to make the repo public | with the first npm release | npm pages link to the repo |
 | Browser tests | happy-dom for the elements, Playwright later for the playground | fast tests in Node now; a real browser once there is a site |
+| npm package name | `@feelgxxd/textel` | npm blocks unscoped `textel` as too similar to `testem`; a scope cannot be squatted |
 | Default aspect for `textel render` | 2 (terminals) | the player stretches to the file's aspect in any font; `--aspect` documented for web use |
 
 Still open:
@@ -271,7 +272,7 @@ Still open:
 | Huge or odd models (millions of triangles, broken normals) | triangle budget with decimation; two-sided lighting is already in place |
 | Terminals handle fast redraws differently | redraw only changed rows; cap fps; compatibility notes |
 | Viewer bundle over budget | keep examples and SDF out of it; measure minified early in 0.3 |
-| Someone takes the `textel` name on npm first | publish 0.2.0 soon after the player works |
+| The package name | npm refused unscoped `textel` as too close to `testem`; the scope `@feelgxxd/textel` is ours, and the command is still `textel` |
 | Scope creep before a first release | the 1.0 list is the bar; everything else waits in "Could do" |
 
 ## Next session starts with

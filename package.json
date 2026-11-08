@@ -1,5 +1,5 @@
 {
-  "name": "textel",
+  "name": "@feelgxxd/textel",
   "version": "0.2.0",
   "description": "Turn 3D models into animated ASCII art for the terminal and the web.",
   "keywords": [
@@ -79,5 +79,8 @@
     "esbuild": "^0.28.2",
     "happy-dom": "^21.0.4",
     "typescript": "^5.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

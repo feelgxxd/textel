@@ -1,5 +1,5 @@
 // Terminal playback for Node: a full-screen session with clean restore, and players for frames files.
-// `textel/terminal` in the package.
+// `@feelgxxd/textel/terminal` in the package.
 import { readFileSync } from 'node:fs';
 import { RESET, type ColorDepth } from './ansi.ts';
 import { parseFrames, recordingANSI, recordingText, type Recording } from './frames.ts';

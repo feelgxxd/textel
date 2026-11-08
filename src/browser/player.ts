@@ -1,6 +1,6 @@
 // <textel-player>: plays a .textel.json file. No dependencies; no 3D code.
 //
-//   <script type="module" src="https://cdn.jsdelivr.net/npm/textel/dist/textel-player.js"></script>
+//   <script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.2/dist/textel-player.js"></script>
 //   <textel-player src="logo.textel.json"></textel-player>
 import { fromFramesFile, type FramesFile, type Recording } from '../format.ts';
 import { accessibleLabel, advance, fit, frameMarkup, scrub, type Markup } from './player-core.ts';
