@@ -64,7 +64,9 @@ test('player dom: paused stays put, play advances, frame wraps', async () => {
   await sleep(120);
   assert.equal(el.frame, 0);
   el.play();
-  await sleep(200);
+  // wait for progress rather than a fixed time: timers run late on a busy CI machine
+  const deadline = performance.now() + 3000;
+  while (el.frame === 0 && performance.now() < deadline) await sleep(20);
   assert.ok(el.frame > 0, `advanced to ${el.frame}`);
   el.pause();
   el.frame = -1;

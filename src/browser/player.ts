@@ -154,7 +154,9 @@ export class TextelPlayer extends Base {
   #kick = () => {
     const run = this.#playing && this.#visible && !document.hidden && !!this.#rec && !this.#drag && this.isConnected;
     if (run && !this.#raf) {
-      this.#last = performance.now();
+      // the first tick only sets the clock: time is measured between frame timestamps alone,
+      // never mixed with performance.now(), whose reading can be later than the next frame's
+      this.#last = -1;
       this.#raf = requestAnimationFrame(this.#tick);
     } else if (!run && this.#raf) {
       cancelAnimationFrame(this.#raf);
@@ -164,7 +166,7 @@ export class TextelPlayer extends Base {
 
   #tick = (now: number) => {
     const rec = this.#rec!;
-    this.#pos = advance(this.#pos, (now - this.#last) / 1000, this.#fps(), rec.frames.length);
+    if (this.#last >= 0) this.#pos = advance(this.#pos, (now - this.#last) / 1000, this.#fps(), rec.frames.length);
     this.#last = now;
     this.#draw();
     this.#raf = requestAnimationFrame(this.#tick);
