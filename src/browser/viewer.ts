@@ -2,9 +2,9 @@
 //
 //   <script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.3/dist/textel-viewer.js"></script>
 //   <textel-viewer src="model.glb" charset="hard" color="#301000,#ffb000"></textel-viewer>
-import { parseModel } from '../loaders/index.ts';
+import { parseModelAsync } from '../loaders/index.ts';
 import type { Mesh } from '../mesh.ts';
-import { toHTML } from '../output.ts';
+import { toHTML, toText } from '../output.ts';
 import { createRenderer, type Renderer } from '../render.ts';
 import { mergeStyles, type StyleInput } from '../style.ts';
 import { drag, gridFor, step, styleFromAttributes, type Grid, type Motion } from './viewer-core.ts';
@@ -36,7 +36,7 @@ async function fetchModel(url: string, signal: AbortSignal): Promise<Mesh> {
       if (b.uri && !b.uri.startsWith('data:')) buffers.set(decodeURIComponent(b.uri), await get(new URL(b.uri, new URL(url, location.href)).href));
     }
   }
-  return parseModel(bytes, url.split(/[?#]/)[0], {
+  return parseModelAsync(bytes, url.split(/[?#]/)[0], {
     resolve: (uri) => {
       const b = buffers.get(uri);
       if (!b) throw new Error(`missing buffer ${uri}`);
@@ -157,7 +157,7 @@ export class TextelViewer extends Base {
       if (typeof source === 'string') mesh = await fetchModel(source, ac.signal);
       else {
         const bytes = source instanceof Uint8Array ? source : new Uint8Array(source instanceof Blob ? await source.arrayBuffer() : source);
-        mesh = parseModel(bytes, name || (source instanceof File ? source.name : ''));
+        mesh = await parseModelAsync(bytes, name || (source instanceof File ? source.name : ''));
       }
       if (ac.signal.aborted) return;
       this.mesh = mesh;
@@ -223,7 +223,10 @@ export class TextelViewer extends Base {
   #draw() {
     if (!this.#renderer) return;
     const frame = this.#renderer.render({ yaw: this.#motion.yaw, pitch: this.#motion.pitch });
-    this.#pre.innerHTML = toHTML(frame);
+    // without any color or dimming the frame is plain text, which is the cheapest thing to draw
+    const plain = frame.style.color.mode === 'none' && frame.materials.every((m) => !m.color && m.opacity === 1);
+    if (plain) this.#pre.textContent = toText(frame);
+    else this.#pre.innerHTML = toHTML(frame);
     this.#dirty = false;
   }
 

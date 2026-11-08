@@ -94,6 +94,11 @@ export interface StyleInput {
   /** depth jump (relative) that counts as an edge in `depth` mode */
   edgeThreshold?: number;
   color?: ColorInput;
+  /**
+   * how many distinct colors a gradient uses. Default: one per glyph of the ramp, so a color
+   * changes only where the glyph does (far fewer color changes to draw). 0 = smooth.
+   */
+  colorSteps?: number;
   /** per material name */
   materials?: Record<string, MaterialInput>;
 }
@@ -117,6 +122,8 @@ export interface Style {
   edgeChars: string[];
   edgeThreshold: number;
   color: ResolvedColor;
+  /** 0 = smooth; otherwise the number of gradient colors (default: the ramp length) */
+  colorSteps: number;
   materials: Record<string, MaterialInput>;
 }
 
@@ -187,6 +194,7 @@ export function resolveStyle(input: StyleInput = {}): Style {
     edgeChars,
     edgeThreshold: num(input.edgeThreshold, DEFAULTS.edgeThreshold, 0),
     color: resolveColor(input.color),
+    colorSteps: Math.round(num(input.colorSteps, -1, -1, 4096)),
     materials: input.materials ?? {},
   };
 }

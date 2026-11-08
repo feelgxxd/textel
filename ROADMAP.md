@@ -20,17 +20,18 @@ Each milestone ends with something people can use. Versions before 1.0 may chang
 
 ## Where things stand (November 2026)
 
-Five milestones are done: 0.1, 0.2.1, 0.2.2, 0.2.3 and 0.2.4. textel works today as a **terminal tool, a library for Node and a web player**; nothing is published yet.
+0.1 through 0.3 are done. textel works today as a **terminal tool, a library for Node, a web player and
+a live web viewer**, published on npm as `@feelgxxd/textel`.
 
 | | |
 |---|---|
-| Code | ~2,500 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 61 (loaders, meshing, rendering, frames format, terminal player, CLI, web player in happy-dom, 10 golden-frame snapshots) |
+| Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
+| Tests | 71 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, 10 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
-| Frames files | 120 frames at 112×56, gzipped: 47 KB average without color, 93 KB with a gradient |
-| Core size | 22.8 KB gzip for all of `dist` except the CLI, unminified, examples and SDF included |
-| Published | version `0.2.0` tagged; published to npm as `@feelgxxd/textel` |
+| Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
+| Web sizes | player 3.2 KB, viewer 11 KB (min+gzip) |
+| Published | `0.2.0` on npm; `0.3.0` prepared |
 
 ### What works
 - `textel <model>` spins a `.glb` / `.gltf` / `.obj` / `.stl` in the terminal, with keys for rotation,
@@ -38,16 +39,17 @@ Five milestones are done: 0.1, 0.2.1, 0.2.2, 0.2.3 and 0.2.4. textel works today
 - `textel render` records a loop into a `.textel.json` file; `textel play` plays it (pause, step, speed)
 - `textel list`, `textel help <command>`
 - Library: `parseModel`, `createRenderer`, `toText` / `toANSI` / `toHTML`, `@feelgxxd/textel/sdf`,
-  `recordLoop` / `stringifyFrames` / `parseFrames`, `@feelgxxd/textel/terminal` (`play`, `playSplash`)
+  `recordLoop` / `stringifyFrames` / `parseFrames`, `@feelgxxd/textel/terminal` (`play`, `playSplash`),
+  `parseModelAsync`
+- Web: `<textel-player>` plays recorded loops; `<textel-viewer>` renders models live and lets people turn them
 - Built-in examples: donut, dice, rocket, planet, mug, gem
 
 ### Known issues and debt
 | Item | Effect | Planned in |
 |---|---|---|
 | Live preview keys (`live.ts`) are only tested by hand; the screen and player under them are tested with fake streams | a key handling regression in preview would only show by hand | any time |
-| `dice` example takes ~0.8 s to mesh | slow start where it is built at runtime | 0.3 (faster field, or ship examples pre-meshed) |
-| Fit uses the resting pitch only | dragging far up or down can clip the model | 0.3 |
-| Core size is near the viewer budget before minifying | the 25 KB target is tight | 0.3 (measure minified, keep examples / SDF out of the viewer bundle) |
+| `dice` example takes ~0.8 s to mesh | slow start where it is built at runtime | 0.4 (faster field, or ship examples pre-meshed) |
+| The viewer has no pinch zoom, and has only been checked in desktop Chrome | touch users cannot zoom; phone behavior is unverified | 0.4 (the playground needs both) |
 | Examples `rocket` and `mug` read less clearly than the others | weaker first impression | any time |
 | Draco / meshopt glTF rejected; flat shading when a model has no normals | some real files look worse or do not load | 1.0 |
 
@@ -122,28 +124,31 @@ player is under 5 KB.
 
 ---
 
-## 0.3: live viewer
+## 0.3: live viewer ✅
 
-Effort: **two to three sessions**.
+- [x] `<textel-viewer src="model.glb" preset="look.json">` web component on top of the core
+- [x] **Accurate aspect**: measures the page font's cell in a hidden `<pre>` and renders for that shape,
+  so nothing is stretched; re-measures on font load and resize
+- [x] **Interaction**: drag on both axes with a flick that eases back to the resting spin and tilt;
+  arrow keys and space when focused; wheel and `+` / `-` zoom with `zoomable`
+- [ ] Pinch zoom on touch screens (wheel only so far)
+- [x] **No blocking**: measured first. Binary glTF parses in a few ms even at 10 MB; the real cost was
+  large text `.obj` files (120 ms for 7 MB). Parsing in slices (`parseModelAsync`) brought the longest
+  freeze to ~20 ms with no Web Worker, so no extra bundle and no trouble with strict CSP
+- [x] **Output path**: measured in Chrome (`/bench` in the demo). Colorless frames cost under 1 ms
+  whichever way; colored frames were slow because nearly every cell had its own color span. One color
+  per glyph level cut a 160×80 gradient frame from 13 ms to 3.6 ms. Per-row updates and CSS classes
+  gained only 5–7 %, so the viewer keeps whole-frame `innerHTML` (colored) and `textContent` (plain)
+- [ ] The same benchmark on a phone
+- [x] **API**: `load(url | File | bytes)`, `mesh`, `look`, `play()`, `pause()`, `paused`; attributes for
+  the common preset fields; `load` and `error` events
+- [x] Same visibility, reduced-motion, accessibility and fit behavior as the player
+- [x] Fit while dragging: `fitPitch` keeps the model inside the grid for any allowed tilt
+- [x] Size budget: viewer + core + loaders **11 KB** min+gzip, budget 12 KB, checked by the build
+- [ ] Faster `dice` field, or examples shipped pre-meshed: moved to 0.4, where the playground needs them
 
-- [ ] `<textel-viewer src="model.glb" preset="look.json">` web component on top of the core
-- [ ] **Accurate aspect**: measure the glyph box of the page font in a hidden `<pre>` (width of N glyphs,
-  line height), re-measure on font load and resize
-- [ ] **Interaction**: drag to rotate on both axes, inertia that eases back to the resting spin,
-  optional wheel / pinch zoom, keyboard arrows when focused
-- [ ] **No blocking**: load and build models in a Web Worker (transfer the mesh buffers); SDF examples
-  built in idle slices; render on the main thread (it is a few ms per frame)
-- [ ] **Output path**: pick the faster of `innerHTML` per frame vs. updating one text node per row;
-  measure on a low-end phone
-- [ ] **API**: properties for every preset field, `load(url | File | ArrayBuffer)`, `play()`, `pause()`,
-  `setStyle()`, events `load`, `error`, `frame`
-- [ ] Same visibility, reduced-motion, accessibility and fit behavior as the player
-- [ ] Fit while dragging: refit or clamp pitch so the model never clips
-- [ ] Size budget: viewer + core + loaders < 25 KB min+gzip, without examples and SDF
-- [ ] Faster `dice` field, or examples shipped pre-meshed for the web
-
-**Done when** the viewer can be dropped into a plain HTML page with one script tag and
-feels smooth at 60 fps on a mid-range phone with a 50k-triangle model.
+**Done when** the viewer can be dropped into a plain HTML page with one script tag and feels smooth.
+Checked by hand in desktop Chrome; a phone check is still open.
 
 ---
 
@@ -277,5 +282,6 @@ Still open:
 
 ## Next session starts with
 
-1. Check that v0.2.0 is live on npm and the CDN, and the repo is public
-2. 0.3: `<textel-viewer>`, starting with glyph measurement and the bundle size of core + loaders
+1. Check that v0.3.0 is live on npm and the viewer loads from the CDN
+2. Settle the two open 0.4 decisions (playground framework, domain)
+3. 0.4: the playground, starting with the page layout, model input and the live preview

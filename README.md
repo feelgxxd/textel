@@ -77,7 +77,18 @@ frame when the output is not a terminal.
 
 ## On a web page
 
-Record once, then play the file with `<textel-player>`: about 3 KB, no 3D code in the page.
+Two elements, both without dependencies and both loaded with one script tag:
+
+| | `<textel-player>` | `<textel-viewer>` |
+|---|---|---|
+| shows | a recorded loop (`.textel.json`) | the model itself, rendered live |
+| size | about 3 KB | about 11 KB |
+| dragging | scrubs through the loop | turns the model any way, with a flick |
+| best for | a spinning logo | something people play with |
+
+### `<textel-player>`
+
+Record once, then play the file: no 3D code in the page.
 
 ```sh
 textel render logo.glb --aspect 1.5 -o logo.textel.json
@@ -107,7 +118,37 @@ Style it with CSS: `font-family`, `color`, `--textel-glow` (a `text-shadow`), `-
 or `::part(screen)`. From JavaScript: `player.play()`, `player.pause()`, `player.frame`,
 `player.recording = json`, and the `load` and `error` events.
 
-`npm run demo` serves a page with several players and a drop zone for your own files.
+### `<textel-viewer>`
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.3/dist/textel-viewer.js"></script>
+<textel-viewer src="model.glb" charset="hard" color="#301000,#ffb000" edges></textel-viewer>
+```
+
+Or `import '@feelgxxd/textel/viewer'` in a bundled app.
+
+It measures the page font and renders for its real cell shape, so the model is never squashed. The box
+is square unless you give it a height. Drag in any direction and let go to flick it; it eases back to
+its resting spin. When focused, the arrow keys turn it and space pauses. Large `.obj` files are parsed
+in slices so the page keeps responding while they load. Like the player, it pauses off screen and in
+background tabs and respects reduced motion.
+
+| attribute | |
+|---|---|
+| `src` | a `.glb`, `.gltf` (external buffers are fetched too), `.obj` or `.stl` |
+| `preset` | a preset JSON file (see [Presets](#presets)) |
+| `charset`, `chars`, `color`, `edges`, `spin`, `pitch`, `zoom`, `distance`, `ambient` | the same as the preset fields; `color` takes a comma separated gradient |
+| `cols` | grid width in characters (default 96) |
+| `paused` | start without spinning |
+| `nodrag` | turn off dragging |
+| `zoomable` | wheel and `+` / `-` zoom |
+| `label` | accessible name |
+
+A preset is applied first, then the attributes, then `viewer.look = { ... }` from JavaScript.
+Also from JavaScript: `viewer.load(urlOrFileOrBytes)`, `viewer.mesh = mesh` (for example from
+`@feelgxxd/textel/sdf`), `play()`, `pause()`, and the `load` and `error` events.
+
+`npm run demo` serves both demo pages with drop zones for your own files, and an output benchmark.
 
 ## Presets
 
@@ -135,6 +176,9 @@ Materials are matched by the names in the model file:
 | `{ "chars": "...", "color": "#hex", "opacity": 0.5 }` | its own ramp and color |
 
 Charsets: `classic`, `hard`, `detailed`, `blocks`, `dots`, `minimal`, or any string of your own.
+
+A gradient gives each glyph of the ramp one color, so colors change only where glyphs do; that keeps
+terminal output and web pages light. `"colorSteps": 0` makes it smooth instead, or set a number of steps.
 
 ## Library
 

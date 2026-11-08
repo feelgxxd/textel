@@ -21,6 +21,18 @@ function gradient(stops: RGB[], t: number): RGB {
 }
 
 /**
+ * Where a cell sits on the gradient. By default each glyph level of the ramp gets one color, from
+ * the first stop for the darkest glyph to the last for the brightest; colorSteps sets another count,
+ * and 0 keeps it smooth.
+ */
+function gradientPosition(frame: Frame, ramp: string[] | null, lum: number): number {
+  const set = frame.style.colorSteps;
+  const steps = set < 0 ? (ramp ?? frame.style.chars).length : set;
+  if (steps <= 1) return steps === 1 ? 1 : lum;
+  return Math.min(steps - 1, Math.floor(lum * steps)) / (steps - 1);
+}
+
+/**
  * Color of one cell, or null when the style has no color for it (use the default color).
  * `faint` asks for a dimmed default color, for dim materials in colorless styles.
  */
@@ -28,7 +40,7 @@ export function cellColor(frame: Frame, i: number): { rgb: RGB | null; faint: bo
   const m = frame.mat[i];
   if (m < 0) return { rgb: null, faint: false };
   const ms = frame.materials[m], cs = frame.style.color;
-  let rgb: RGB | null = ms.color ?? (cs.mode === 'gradient' ? gradient(cs.stops, frame.lum[i]) : cs.mode === 'mono' ? cs.fg : null);
+  let rgb: RGB | null = ms.color ?? (cs.mode === 'gradient' ? gradient(cs.stops, gradientPosition(frame, ms.chars, frame.lum[i])) : cs.mode === 'mono' ? cs.fg : null);
   if (!rgb) return { rgb: null, faint: ms.opacity < 1 };
   if (ms.opacity < 1) rgb = lerp(cs.bg ?? [0, 0, 0], rgb, ms.opacity);
   return { rgb: [Math.round(rgb[0]), Math.round(rgb[1]), Math.round(rgb[2])], faint: false };

@@ -1,6 +1,6 @@
 export { createRenderer, type Frame, type Renderer, type View } from './render.ts';
 export { toText, toANSI, toHTML, cellColor, type ColorDepth } from './output.ts';
-export { parseModel, parseGLTF, parseOBJ, parseSTL, MODEL_EXTENSIONS } from './loaders/index.ts';
+export { parseModel, parseModelAsync, parseModelSteps, parseGLTF, parseOBJ, parseSTL, MODEL_EXTENSIONS } from './loaders/index.ts';
 export {
   recordLoop, RecordingBuilder, encodeStream, decodeStream, toFramesFile, fromFramesFile, stringifyFrames, parseFrames,
   recordingText, recordingANSI, FORMAT_VERSION, ENCODING,

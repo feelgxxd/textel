@@ -117,3 +117,24 @@ test('parseModel picks the parser by extension or content', () => {
   assert.equal(parseModel(new TextEncoder().encode(CUBE_OBJ)).indices.length, 36);
   assert.equal(parseModel(tinyGLB(), 'x.bin').indices.length, 3);
 });
+
+test('parseModelAsync gives the same mesh as parseModel and lets the event loop run', async () => {
+  const { parseModelAsync } = await import('../src/loaders/index.ts');
+  // a big OBJ: a grid of quads, ~120k triangles
+  const N = 245, lines: string[] = [];
+  for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) lines.push(`v ${i} ${j} ${Math.sin(i / 9) * Math.cos(j / 7)}`);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const a = j * (N + 1) + i + 1;
+    lines.push(`f ${a} ${a + 1} ${a + N + 2} ${a + N + 1}`);
+  }
+  const bytes = new TextEncoder().encode(lines.join('\n'));
+  let ticks = 0;
+  const timer = setInterval(() => ticks++, 1);
+  const async = await parseModelAsync(bytes, 'grid.obj', {}, 4);
+  clearInterval(timer);
+  const sync = parseModel(bytes, 'grid.obj');
+  assert.equal(async.indices.length, N * N * 6);
+  assert.deepEqual(async.indices, sync.indices);
+  assert.deepEqual(async.positions, sync.positions);
+  assert.ok(ticks > 0, 'timers ran while it parsed');
+});

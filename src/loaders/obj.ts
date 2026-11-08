@@ -2,13 +2,28 @@ import { MeshBuilder, type Mesh } from '../mesh.ts';
 
 /** Wavefront OBJ: v, vn, f (any polygon, fan-triangulated), usemtl. Texture coordinates are ignored. */
 export function parseOBJ(text: string): Mesh {
+  const g = parseOBJSteps(text);
+  let r = g.next();
+  while (!r.done) r = g.next();
+  return r.value;
+}
+
+/**
+ * The same parser as a generator that yields every `slice` lines, so a page can parse a large file
+ * in small pieces and stay responsive (see parseModelAsync).
+ */
+export function* parseOBJSteps(text: string, slice = 4000): Generator<void, Mesh> {
   const v: number[] = [], vn: number[] = [];
   const b = new MeshBuilder();
   const seen = new Map<string, number>();
   let mat = -1;
-  const lines = text.split(/\r?\n/);
-  for (let ln = 0; ln < lines.length; ln++) {
-    const line = lines[ln].trim();
+  // walk the text line by line instead of splitting it, so a big file is not copied into one huge array
+  for (let start = 0, ln = 0; start < text.length; ln++) {
+    let end = text.indexOf('\n', start);
+    if (end < 0) end = text.length;
+    const line = text.slice(start, end).trim();
+    start = end + 1;
+    if (ln % slice === slice - 1) yield;
     if (!line || line[0] === '#') continue;
     const parts = line.split(/\s+/), tag = parts[0];
     if (tag === 'v') v.push(+parts[1], +parts[2], +parts[3]);

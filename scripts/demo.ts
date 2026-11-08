@@ -1,6 +1,9 @@
-// Renders a few frames files and serves the player demo page: npm run demo
+// Renders a few frames files and serves the demo pages: npm run demo
+// HOST=0.0.0.0 npm run demo makes them reachable from other devices on the network (a phone).
+import { build } from 'esbuild';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { networkInterfaces } from 'node:os';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildExample, EXAMPLES } from '../src/examples.ts';
@@ -48,12 +51,17 @@ function toOBJ(m: Mesh): string {
 for (const ex of EXAMPLES) writeFileSync(join(modelsDir, `${ex.name}.obj`), toOBJ(buildExample(ex)));
 console.log(`wrote ${EXAMPLES.length} example models as .obj`);
 
+// the output benchmark page's script
+await build({ entryPoints: [join(root, 'scripts', 'bench-dom.ts')], outfile: join(framesDir, 'bench.js'), bundle: true, format: 'esm', minify: true, target: 'es2022', define: { BUILT: JSON.stringify(new Date().toISOString()) } });
+
 const TYPES: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.obj': 'text/plain' };
 const routes: Record<string, string> = {
   '/': join(root, 'examples', 'player.html'),
   '/viewer': join(root, 'examples', 'viewer.html'),
+  '/bench': join(root, 'examples', 'bench.html'),
   '/textel-player.js': join(root, 'dist', 'textel-player.js'),
   '/textel-viewer.js': join(root, 'dist', 'textel-viewer.js'),
+  '/bench.js': join(framesDir, 'bench.js'),
 };
 
 const server = createServer((req, res) => {
@@ -73,10 +81,18 @@ const server = createServer((req, res) => {
   }
 });
 
+const host = process.env.HOST ?? '127.0.0.1';
 let port = Number(process.env.PORT ?? 5173);
 server.on('error', (e: NodeJS.ErrnoException) => {
-  if (e.code === 'EADDRINUSE' && port < 5200) server.listen(++port, '127.0.0.1');
+  if (e.code === 'EADDRINUSE' && port < 5200) server.listen(++port, host);
   else throw e;
 });
-server.on('listening', () => console.log(`\nplayer demo: http://127.0.0.1:${port}/\nviewer demo: http://127.0.0.1:${port}/viewer\n(Ctrl+C to stop)`));
-server.listen(port, '127.0.0.1');
+server.on('listening', () => {
+  // on 0.0.0.0, list the addresses other devices can use
+  const hosts = host === '0.0.0.0'
+    ? Object.values(networkInterfaces()).flat().filter((a) => a && a.family === 'IPv4' && !a.internal).map((a) => a!.address)
+    : [host];
+  for (const h of hosts) console.log(`\nplayer demo: http://${h}:${port}/\nviewer demo: http://${h}:${port}/viewer\nbenchmark:   http://${h}:${port}/bench`);
+  console.log('(Ctrl+C to stop)');
+});
+server.listen(port, host);

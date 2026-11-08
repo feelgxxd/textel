@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createRenderer, toANSI, toHTML, toText } from '../src/index.ts';
+import { cellColor, createRenderer, toANSI, toHTML, toText } from '../src/index.ts';
 import { parseOBJ } from '../src/loaders/obj.ts';
 import { sdfToMesh, sdSphere, sdBox } from '../src/sdf.ts';
 
@@ -74,4 +74,24 @@ test('render: setStyle resizes', () => {
 test('style errors are explicit', () => {
   assert.throws(() => createRenderer(sphere, { charset: 'nope' }), /unknown charset/);
   assert.throws(() => createRenderer(sphere, { color: 'red' }), /not a hex color/);
+});
+
+test('gradients use one color per glyph level by default, fewer color changes to draw', () => {
+  const spans = (colorSteps?: number) => {
+    const r = createRenderer(sphere, { width: 60, height: 24, color: ['#000000', '#ff0000'], charset: 'hard', colorSteps });
+    return toHTML(r.render()).split('<span').length - 1;
+  };
+  const perGlyph = spans(), smooth = spans(0), single = spans(1);
+  assert.ok(perGlyph * 2 < smooth, `per glyph ${perGlyph} vs smooth ${smooth}`);
+  // with a single step every drawn run is one color: at most one span per row
+  assert.ok(single <= 24, `single step ${single}`);
+  // each glyph level maps to exactly one color
+  const r = createRenderer(sphere, { width: 60, height: 24, color: ['#000000', '#ff0000'], charset: 'hard' });
+  const f = r.render(), seen = new Map<string, string>();
+  for (let i = 0; i < f.chars.length; i++) {
+    if (f.chars[i] === ' ') continue;
+    const rgb = cellColor(f, i).rgb!.join(',');
+    assert.equal(seen.get(f.chars[i]) ?? rgb, rgb, `glyph ${f.chars[i]} has one color`);
+    seen.set(f.chars[i], rgb);
+  }
 });

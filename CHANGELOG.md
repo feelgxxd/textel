@@ -4,6 +4,30 @@ All notable changes to textel. Versions follow [semantic versioning](https://sem
 the API may still change between minor versions. The frames file format has its own version
 (see [docs/format.md](docs/format.md)).
 
+## 0.3.0 (2026-11-09)
+
+### Added
+- `<textel-viewer>` (`@feelgxxd/textel/viewer`, about 11 KB gzipped): renders a model live in the page.
+  Measures the page font so nothing is squashed; drag in any direction with a flick that eases back;
+  arrow keys and space when focused; optional wheel zoom; loads `.glb`, `.gltf` with external buffers,
+  `.obj` and `.stl`; style from a preset, attributes and `.look`
+- `parseModelAsync` and `parseModelSteps`: parse large text models in slices so a page keeps responding
+  (a 7 MB `.obj` froze a page for 120 ms; now for at most about 20 ms at a time)
+- `fitPitch` style option: the model stays inside the grid for any tilt up to that angle
+- `colorSteps` style option: how many colors a gradient uses
+- `npm run demo` also serves a viewer page and a benchmark of ways to update the page
+
+### Changed
+- Gradients now use one color per glyph of the ramp by default instead of a different color for
+  almost every cell. They look the same at a glance, and draw far cheaper: a 160×80 frame went from
+  ~5000 color spans to ~900 (13 ms → 3.6 ms per frame in Chrome), ANSI output shrank to a quarter,
+  and gradient frames files to about half. `colorSteps: 0` restores smooth gradients.
+
+### Fixed
+- `<textel-player>` and `<textel-viewer>` use their own document for lifecycle and timing, so they
+  no longer fail while a page is being torn down, and work inside iframes
+- The player's first animation step no longer mixes two clocks, which could make it start late
+
 ## 0.2.0 (2026-11-08)
 
 First release, published as `@feelgxxd/textel` (npm did not accept the unscoped name). The command is `textel`.

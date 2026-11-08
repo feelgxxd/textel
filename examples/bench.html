@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>textel output benchmark</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #0e0f11; color: #d8dadf; font: 15px/1.5 system-ui, sans-serif; }
+    main { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+    button { font: inherit; padding: 6px 14px; }
+    #out { font: 12px/1.4 ui-monospace, monospace; white-space: pre-wrap; background: #16181b; padding: 12px; border-radius: 8px; }
+    #stage { height: 320px; overflow: hidden; margin: 12px 0; }
+    #stage pre { margin: 0; font: 6px/1 ui-monospace, monospace; color: #e8e8e8; }
+  </style>
+</head>
+<body>
+<main>
+  <h1 style="font: 600 20px ui-monospace, monospace">textel output benchmark</h1>
+  <p>Draws the same spinning models with each way of updating the page and reports the cost per frame.
+    Takes about half a minute; keep this tab in front while it runs.</p>
+  <button id="go">Run</button>
+  <div id="stage"></div>
+  <div id="out"></div>
+</main>
+<script type="module" src="/bench.js"></script>
+</body>
+</html>
