@@ -61,7 +61,9 @@
     "./dist/browser/player.js",
     "./dist/textel-player.js",
     "./dist/browser/viewer.js",
-    "./dist/textel-viewer.js"
+    "./dist/textel-viewer.js",
+    "./src/browser/player.ts",
+    "./src/browser/viewer.ts"
   ],
   "files": [
     "dist"

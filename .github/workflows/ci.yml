@@ -25,6 +25,9 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run site:build
+      - name: The playground bundle defines the viewer
+        shell: bash
+        run: grep -qE 'customElements\.define\(.textel-viewer' site-dist/assets/*.js
       - name: Smoke test the built CLI
         shell: bash
         run: |
