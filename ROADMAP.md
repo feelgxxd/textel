@@ -186,7 +186,7 @@ Live at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 Effort: **two sessions**.
 
 - [x] **Animated SVG**: one `<text>` per row per frame, stepped with CSS animation; works inside GitHub
-  READMEs where scripts do not run. 80×40 × 60 frames is ~220 KB (16 KB gzipped) without color; the
+  READMEs where scripts do not run. 80×40 × 80 frames at 20 fps is ~290 KB (24 KB gzipped) without color; the
   playground makes it at that size, the CLI at any size. The README shows one
 - [ ] **GIF and MP4**: done in the playground with canvas (and WebCodecs for MP4 where available);
   from the CLI as an optional add-on so the main package stays dependency-free

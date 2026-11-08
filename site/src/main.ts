@@ -243,8 +243,9 @@ async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' 
   recording = true;
   button.disabled = true;
   try {
-    // an image is smaller: every frame is stored whole, so fewer frames and cells keep it light
-    const [width, height, frames] = kind === 'svg' ? [80, 40, 60] : [112, 56, 120];
+    // an image is smaller: every frame is stored whole, so fewer frames and cells keep it light;
+    // both take 4 s for a turn
+    const [width, height, frames, fps] = kind === 'svg' ? [80, 40, 80, 20] : [112, 56, 120, 30];
     const r = createRenderer(mesh, mergeStyles(state.look, { width, height, aspect: 2 }));
     const b = new RecordingBuilder();
     for (let i = 0; i < frames; i++) {
@@ -254,7 +255,7 @@ async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' 
         await new Promise((res) => setTimeout(res));
       }
     }
-    const rec = b.build(30, { title: base, generator: 'textel playground' });
+    const rec = b.build(fps, { title: base, generator: 'textel playground' });
     if (kind === 'json') download(stringifyFrames(rec), `${base}.textel.json`);
     else download(recordingSVG(rec, { title: base, ...(svgPageColors ? { color: state.page.fg, background: state.page.bg } : {}) }), `${base}.svg`, 'image/svg+xml');
   } finally {

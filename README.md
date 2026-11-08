@@ -4,7 +4,7 @@ Turn 3D models into animated ASCII art, in the terminal and on the web.
 
 <p align="center"><img src="docs/gem.svg" width="480" alt="A gem spinning, drawn in ASCII characters"></p>
 
-<p align="center"><sub>An animated SVG made with <code>textel render --example gem --size 80x40 --frames 60 -o gem.svg</code></sub></p>
+<p align="center"><sub>An animated SVG made with <code>textel render --example gem --size 80x40 --frames 80 --fps 20 -o gem.svg</code></sub></p>
 
 ```sh
 npx @feelgxxd/textel model.glb                   # spins in your terminal
@@ -156,15 +156,15 @@ An image that spins by itself, with no script: it plays in a GitHub README, in d
 `<img>` goes. The one at the top of this page is one.
 
 ```sh
-textel render logo.glb --size 80x40 --frames 60 -o logo.svg
+textel render logo.glb --size 80x40 --frames 80 --fps 20 -o logo.svg
 ```
 
 ```md
 ![logo](logo.svg)
 ```
 
-Every frame is stored whole, so keep it small: 80×40 with 60 frames is about 220 KB (16 KB gzipped)
-without color; a gradient makes it several times larger. Without colors of its own it is transparent and
+Every frame is stored whole, so keep it small: 80×40 with 80 frames (one turn in 4 s) is about 290 KB
+(24 KB gzipped) without color; a gradient makes it several times larger. Without colors of its own it is transparent and
 its text follows the reader's light or dark theme. It shows a still frame to readers who prefer reduced
 motion. The playground makes one from its **Image** tab, and the library from any recording with
 `recordingSVG(recording, { color, background, cell })`.
