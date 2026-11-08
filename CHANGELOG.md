@@ -4,6 +4,15 @@ All notable changes to textel. Versions follow [semantic versioning](https://sem
 the API may still change between minor versions. The frames file format has its own version
 (see [docs/format.md](docs/format.md)).
 
+## Unreleased
+
+### Added
+- The playground at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/): load a model or an
+  example, tune the look live, share it as a link, and export embeds, recorded loops, CLI commands and presets
+
+### Changed
+- The `dice` example builds about five times faster (from 0.8 s to under 0.2 s), with the same mesh
+
 ## 0.3.0 (2026-11-09)
 
 ### Added

@@ -20,18 +20,19 @@ Each milestone ends with something people can use. Versions before 1.0 may chang
 
 ## Where things stand (November 2026)
 
-0.1 through 0.3 are done. textel works today as a **terminal tool, a library for Node, a web player and
-a live web viewer**, published on npm as `@feelgxxd/textel`.
+0.1 through 0.3 are done, and 0.4 is mostly done. textel works today as a **terminal tool, a library for
+Node, a web player, a live web viewer and a playground site**, published on npm as `@feelgxxd/textel` and
+at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 
 | | |
 |---|---|
 | Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 71 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, 10 golden-frame snapshots) |
+| Tests | 77 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, 10 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
-| Web sizes | player 3.2 KB, viewer 11 KB (min+gzip) |
-| Published | `0.2.0` on npm; `0.3.0` prepared |
+| Web sizes | player 3.2 KB, viewer 11 KB, playground 19 KB (min+gzip) |
+| Published | `0.3.0` on npm; the playground deploys from `main` |
 
 ### What works
 - `textel <model>` spins a `.glb` / `.gltf` / `.obj` / `.stl` in the terminal, with keys for rotation,
@@ -42,13 +43,14 @@ a live web viewer**, published on npm as `@feelgxxd/textel`.
   `recordLoop` / `stringifyFrames` / `parseFrames`, `@feelgxxd/textel/terminal` (`play`, `playSplash`),
   `parseModelAsync`
 - Web: `<textel-player>` plays recorded loops; `<textel-viewer>` renders models live and lets people turn them
+- Playground: load a model or an example, tune the look live, share it as a link, export embeds,
+  recorded loops, CLI commands and presets
 - Built-in examples: donut, dice, rocket, planet, mug, gem
 
 ### Known issues and debt
 | Item | Effect | Planned in |
 |---|---|---|
 | Live preview keys (`live.ts`) are only tested by hand; the screen and player under them are tested with fake streams | a key handling regression in preview would only show by hand | any time |
-| `dice` example takes ~0.8 s to mesh | slow start where it is built at runtime | 0.4 (faster field, or ship examples pre-meshed) |
 | The viewer has no pinch zoom, and has only been checked in desktop Chrome | touch users cannot zoom; phone behavior is unverified | 0.4 (the playground needs both) |
 | Examples `rocket` and `mug` read less clearly than the others | weaker first impression | any time |
 | Draco / meshopt glTF rejected; flat shading when a model has no normals | some real files look worse or do not load | 1.0 |
@@ -155,20 +157,23 @@ Checked by hand in desktop Chrome; a phone check is still open.
 ## 0.4: playground (GitHub Pages)
 
 Built with Vite and plain TypeScript, using the viewer itself, so the site is also the viewer's test bench.
-Effort: **three to four sessions**.
+Live at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 
-- [ ] **Input**: drag and drop or file picker (`.glb`, `.gltf` + `.bin`, `.obj`, `.stl`), or pick an example;
+- [x] **Input**: drag and drop or file picker (`.glb`, `.gltf` + `.bin`, `.obj`, `.stl`), or pick an example;
   warn above ~500k triangles
-- [ ] **Look panels**: charset (with a live ramp preview and custom input), color mode (none / mono / gradient
-  editor), light (drag a handle on a sphere), ambient, edges, shading
-- [ ] **Camera and motion**: pitch, spin speed, zoom, distance (perspective), grid size, aspect
-- [ ] **Materials**: list the model's material names, map each to solid / carved / dim / custom
-- [ ] **Preset gallery**: a handful of starting looks (terminal green, amber CRT, blueprint, ink on paper, blocks)
-- [ ] **Share**: the whole preset compressed into the URL hash; opening the link restores it
-  (the model itself is never in the URL)
-- [ ] **Export**: preset JSON, frames file, embed snippet (player or viewer), equivalent CLI command
-- [ ] Mobile layout: viewer on top, panels in a sheet below
-- [ ] Deployed from `main` by GitHub Actions to GitHub Pages; custom domain optional later
+- [x] **Look panels**: charset (named or custom), color mode (none / mono / gradient), light (around and
+  height sliders), ambient, edges, shading
+- [x] **Camera and motion**: pitch, spin speed, zoom, distance (perspective), grid size
+- [x] **Materials**: list the model's material names, map each to solid / carved / dim / custom
+- [x] **Preset gallery**: plain, terminal green, amber CRT, blueprint, ink on paper, blocks
+- [x] **Share**: the whole look compressed into the URL hash; opening the link restores it
+  (the model itself is never in the URL; an example is, by name)
+- [x] **Export**: preset JSON, recorded `.textel.json` loop, embed snippet (player or viewer), equivalent CLI command
+- [x] Narrow layout: preview on top, panels below
+- [x] Deployed from `main` by GitHub Actions to GitHub Pages; CI checks that the built site defines the viewer
+- [x] Examples load fast: `dice` meshes in under 0.2 s instead of 0.8 s
+- [ ] Pinch zoom in the viewer, and a check on a real phone (touch turning, panel layout, the benchmark page)
+- [ ] Nice to have: a live ramp preview next to the charset, a light handle on a sphere, an aspect control
 
 **Done when** someone with no tooling can go from a `.glb` to an embed snippet in under a minute.
 
@@ -248,13 +253,9 @@ Made:
 | Browser tests | happy-dom for the elements, Playwright later for the playground | fast tests in Node now; a real browser once there is a site |
 | npm package name | `@feelgxxd/textel` | npm blocks unscoped `textel` as too similar to `testem`; a scope cannot be squatted |
 | Default aspect for `textel render` | 2 (terminals) | the player stretches to the file's aspect in any font; `--aspect` documented for web use |
-
-Still open:
-
-| Decision | Options | Recommendation | Needed by |
-|---|---|---|---|
-| Playground framework | plain TypeScript / a small framework | **plain TypeScript** with Vite; the site is small and uses the custom elements | 0.4 |
-| Custom domain for the playground | GitHub Pages URL / own domain | decide at 0.4; GitHub Pages works first | 0.4 |
+| Playground framework | plain TypeScript with Vite | the site is small and uses the custom elements |
+| Playground address | the GitHub Pages URL, `feelgxxd.github.io/textel` | works with no setup; a custom domain can come later |
+| Example loading | keep building them from code, make the slow field faster | shipped meshes would be about 1.5 MB each |
 
 ---
 
@@ -282,6 +283,6 @@ Still open:
 
 ## Next session starts with
 
-1. Check that v0.3.0 is live on npm and the viewer loads from the CDN
-2. Settle the two open 0.4 decisions (playground framework, domain)
-3. 0.4: the playground, starting with the page layout, model input and the live preview
+1. Pinch zoom in the viewer, then a check of the playground on a real phone
+2. Release 0.4.0 (CHANGELOG, version, tag, npm)
+3. 0.5: exports

@@ -29,6 +29,17 @@ Install it once with `npm install -g @feelgxxd/textel` and the command is just `
 
 Reads `.glb`, `.gltf`, `.obj` and `.stl`. Everything runs locally; nothing is uploaded.
 
+## Playground
+
+**[feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/)**: drop a model into the page, tune the
+look with a live preview, and take it with you. Nothing to install, and your files never leave the browser.
+
+- Start from a preset (terminal green, amber CRT, blueprint, ink on paper, blocks) or build your own look:
+  characters, color and gradients, outlines, shading, light, camera and motion, and per-material styles
+- **Copy link** puts the whole look in the URL, so a link opens the same look (the model itself stays with you)
+- Export it as a viewer embed for a page, a recorded `.textel.json` loop with a player embed, the matching
+  `textel` command for the terminal, or a preset JSON file
+
 ## Terminal
 
 ```

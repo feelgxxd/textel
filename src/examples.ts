@@ -54,16 +54,29 @@ function* dice() {
     }
     return false;
   };
-  // pips are shallow dimples pressed into each face
+  // pips are shallow dimples pressed into each face: spheres of radius r centered just outside it
+  const r = pip + 0.06, centers: number[][] = [];
+  for (let f = 0; f < 6; f++) {
+    const [ax, sg, u, v] = SIDES[f];
+    const list: number[] = [];
+    for (const [pu, pv] of FACES[f]) {
+      const c = [0, 0, 0];
+      c[ax] = sg * (s + 0.05); c[u] = pu; c[v] = pv;
+      list.push(...c);
+    }
+    centers.push(list);
+  }
   const field = (x: number, y: number, z: number) => {
     let d = sdBox(x, y, z, s, s, s, 0.18);
     const p = [x, y, z];
     for (let f = 0; f < 6; f++) {
-      const [ax, sg, u, v] = SIDES[f];
-      for (const [pu, pv] of FACES[f]) {
-        const c = [0, 0, 0];
-        c[ax] = sg * (s + 0.05); c[u] = pu; c[v] = pv;
-        d = Math.max(d, -(Math.hypot(p[0] - c[0], p[1] - c[1], p[2] - c[2]) - pip - 0.06));
+      const [ax, sg] = SIDES[f];
+      // a dimple only shapes the surface near its own face; farther in, the box is deeper anyway
+      if (p[ax] * sg < s - 0.3) continue;
+      const c = centers[f];
+      for (let i = 0; i < c.length; i += 3) {
+        const dx = x - c[i], dy = y - c[i + 1], dz = z - c[i + 2];
+        d = Math.max(d, r - Math.sqrt(dx * dx + dy * dy + dz * dz));
       }
     }
     return d;

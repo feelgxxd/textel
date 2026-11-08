@@ -265,8 +265,11 @@ function changed() {
 
 function showStatus() {
   if (!mesh) return;
+  const tris = mesh.indices.length / 3;
   const mats = mesh.materials.length > 1 ? ` · ${mesh.materials.length} materials` : '';
-  statusLine.textContent = `${modelFile} · ${(mesh.indices.length / 3).toLocaleString()} triangles${mats}`;
+  // past this the preview still works, but slower devices start to drop frames
+  const heavy = tris > 500_000 ? ' · heavy model: it may stutter on slower devices, and embeds will be large' : '';
+  statusLine.textContent = `${modelFile} · ${tris.toLocaleString()} triangles${mats}${heavy}`;
 }
 
 function setMesh(m: Mesh, file: string) {
