@@ -53,33 +53,19 @@ Render once, play anywhere, without shipping the renderer.
   to a stored text snapshot (catches unintended visual changes; `npm run snapshots` to update)
 
 ### 0.2.2 The `.textel.json` format
-A frames file is a looped animation, already rendered. Draft:
+A frames file is a looped animation, already rendered. The full spec is in [docs/format.md](docs/format.md):
+a JSON header with a glyph palette and an optional style palette (color / dim per cell), and a base64
+varint stream where the first frame is run-length encoded and every later frame is either a key frame
+or only the spans that changed, whichever is smaller.
 
-```jsonc
-{
-  "textel": 1,                 // format version
-  "width": 112, "height": 56,
-  "aspect": 1.5,               // cell height / width it was rendered for
-  "fps": 30,
-  "glyphs": " .:-=+*#%@/|\\",  // every glyph used, index 0 is the background
-  "colors": ["#ffb000", "#c08400"], // optional palette; omitted for colorless files
-  "frames": "<base64>",        // encoded stream, see below
-  "meta": { "title": "...", "generator": "textel 0.2.0" }
-}
-```
-
-Encoding, to be settled by measurement:
-- each cell is a glyph index (and a color index when there is a palette)
-- a **key frame** every N frames stores all cells, run-length encoded
-- the frames in between store only the cells that changed since the previous frame, as
-  (skip, run, values) triples
-- the byte stream uses varints and is base64 encoded; gzip on the server does the rest
-
-- [ ] Write the encoder and decoder in the core (`encodeFrames`, `decodeFrames`)
-- [ ] Round-trip tests: decode(encode(x)) === x for every example, many sizes, with and without color
-- [ ] Measure: target < 100 KB gzipped for 120 frames at 112×56 without color, < 250 KB with a gradient
-- [ ] Decide on JSON + base64 vs. a binary `.textel` file (JSON is easier to inspect and host; binary is smaller)
-- [ ] Write the format down in `docs/format.md` so others can write players
+- [x] Encoder and decoder in the core (`recordLoop`, `encodeStream` / `decodeStream`, `stringifyFrames` / `parseFrames`)
+- [x] Round-trip tests: every example with and without color, plus random recordings with large palettes
+- [x] Measure (`bench/frames-size.ts`), 120 frames at 112×56, gzipped JSON: 47 KB average / 89 KB worst without color,
+  93 KB average / 188 KB worst with a gradient; both under target (100 / 250 KB)
+- [x] Decide on JSON + base64 vs. a binary `.textel` file: **JSON** for version 1. Sizes are well under target;
+  JSON is one `fetch().json()` away, readable, embeddable in a single HTML file, and compressed by static hosts.
+  Binary is ~25% smaller after gzip and can be added later as a second container for the same stream.
+- [x] Write the format down in `docs/format.md` so others can write players
 
 ### 0.2.3 `textel render` and `textel play`
 - [ ] `textel render <model> -o out.textel.json [--frames 120] [--fps 30] [--size 112x56] [style flags]`
