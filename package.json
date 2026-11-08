@@ -77,14 +77,17 @@
     "snapshots": "node test/update-snapshots.ts",
     "size": "node scripts/build-browser.ts --check",
     "demo": "node scripts/build-browser.ts && node scripts/demo.ts",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "site": "vite --config site/vite.config.ts",
+    "site:build": "vite build --config site/vite.config.ts"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^21.0.4",
     "@types/node": "^24.0.0",
     "esbuild": "^0.28.2",
     "happy-dom": "^21.0.4",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vite": "^8.3.6"
   },
   "publishConfig": {
     "access": "public"

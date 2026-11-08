@@ -1,0 +1,67 @@
+:root {
+  color-scheme: dark;
+  --bg: #0d0e10;
+  --panel: #15171a;
+  --line: #262a2f;
+  --text: #dcdfe4;
+  --mute: #8a9099;
+  --accent: #ffb000;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; }
+a { color: inherit; }
+button, select, input, textarea { font: inherit; color: inherit; }
+
+.top { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+.brand { font: 600 18px var(--mono); text-decoration: none; }
+.brand span { color: var(--mute); font-weight: 400; }
+.top nav { display: flex; gap: 16px; color: var(--mute); }
+
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; }
+@media (max-width: 860px) { .app { grid-template-columns: minmax(0, 1fr); padding: 12px; } }
+
+.stage { min-width: 0; }
+.preview { position: relative; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; transition: background .2s, color .2s; }
+.preview textel-viewer { height: min(70vh, 640px); }
+@media (max-width: 860px) { .preview textel-viewer { height: 56vh; } }
+.busy { position: absolute; inset: auto 12px 12px auto; font: 12px var(--mono); background: rgb(0 0 0 / .6); color: #fff; padding: 4px 8px; border-radius: 6px; }
+
+.input { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
+.file input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.file span { display: inline-block; padding: 7px 14px; border-radius: 8px; background: var(--accent); color: #1a1100; font-weight: 600; cursor: pointer; }
+.file input:focus-visible + span { outline: 2px solid var(--text); outline-offset: 2px; }
+.or { color: var(--mute); }
+.examples { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.link { background: none; border: 0; padding: 0; color: var(--text); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-family: var(--mono); }
+.status { font: 12px var(--mono); color: var(--mute); margin: 10px 0 0; }
+.hint { color: var(--mute); font-size: 13px; margin: 6px 0 0; }
+
+.panels { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.panel summary { cursor: pointer; font-weight: 600; padding: 2px 0; }
+.panel[open] summary { margin-bottom: 8px; }
+.note { color: var(--mute); font-size: 13px; margin: 4px 0 8px; }
+
+.field { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; align-items: center; gap: 10px; margin: 6px 0; }
+.field .name { color: var(--mute); }
+.field output { font: 12px var(--mono); min-width: 52px; text-align: right; color: var(--mute); }
+.field select, .panel input[type=text] { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+.panel input[type=text] { font-family: var(--mono); margin: 2px 0 6px; }
+.field input[type=range] { width: 100%; accent-color: var(--accent); }
+.field input[type=color] { width: 44px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; }
+
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.presets button { border: 1px solid var(--line); border-radius: 8px; padding: 8px; font-family: var(--mono); cursor: pointer; text-align: left; }
+
+.exports button { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.exports button.primary { background: var(--accent); border-color: var(--accent); color: #1a1100; font-weight: 600; }
+.exports button:disabled { opacity: .6; cursor: default; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 12px 0 6px; }
+.tabs [aria-selected=true] { border-color: var(--text); }
+.code { position: relative; margin: 6px 0; }
+.code textarea { width: 100%; resize: vertical; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: 12px/1.45 var(--mono); }
+.code button { position: absolute; top: 6px; right: 6px; font-size: 12px; padding: 2px 8px; }
+
+.drop-overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgb(0 0 0 / .7); font: 600 22px var(--mono); color: var(--accent); border: 3px dashed var(--accent); z-index: 10; pointer-events: none; }

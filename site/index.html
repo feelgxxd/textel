@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>textel playground</title>
+  <meta name="description" content="Turn a 3D model into animated ASCII art, tune the look, and take it to your site or terminal.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext x='2' y='13' font-size='13' font-family='monospace' fill='%23ffb000'%3E%23%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="./">textel <span>playground</span></a>
+    <nav>
+      <a href="https://github.com/feelgxxd/textel">GitHub</a>
+      <a href="https://www.npmjs.com/package/@feelgxxd/textel">npm</a>
+    </nav>
+  </header>
+
+  <main class="app">
+    <section class="stage">
+      <div class="preview" id="preview">
+        <textel-viewer id="viewer" zoomable label="Your model drawn in ASCII"></textel-viewer>
+        <div class="busy" id="busy" hidden></div>
+      </div>
+      <div class="input">
+        <label class="file">
+          <input type="file" id="file" accept=".glb,.gltf,.obj,.stl">
+          <span>Choose a model</span>
+        </label>
+        <span class="or">or drop one anywhere · or try</span>
+        <span class="examples" id="examples"></span>
+      </div>
+      <p class="status" id="status">Loading…</p>
+      <p class="hint">Drag to turn it, flick to spin, wheel to zoom. Click it and use the arrow keys; space pauses.
+        Your files never leave this page.</p>
+    </section>
+
+    <aside class="panels" id="panels"></aside>
+  </main>
+
+  <div class="drop-overlay" id="drop-overlay" hidden>Drop to load the model</div>
+
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>
