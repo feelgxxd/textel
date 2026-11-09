@@ -207,7 +207,7 @@ function renderExports() {
   const base = modelFile.replace(/\.[a-z0-9]+$/i, '');
   const body: HTMLElement[] = [];
   if (tab === 'Live on a page') {
-    body.push(h('p', { class: 'note' }, `Put ${modelFile} next to your page. The viewer is about 14 KB and renders it live.`));
+    body.push(h('p', { class: 'note' }, `Put ${modelFile} next to your page. The viewer is about 16 KB and renders it live.`));
     body.push(codeBlock(embedSnippet(state, 'viewer', modelFile)));
     if (needsPreset(state.look)) body.push(h('p', { class: 'note' }, 'This look uses settings only a preset file carries; save it next to the page too.'), presetButton());
   } else if (tab === 'Recorded loop') {
@@ -375,7 +375,9 @@ async function withBusy<T>(text: string, work: () => Promise<T>): Promise<T | un
   try {
     return await work();
   } catch (e) {
-    statusLine.textContent = `Could not load it: ${(e as Error).message}`;
+    statusLine.textContent = (e as { code?: string }).code === 'DRACO_DECODER_NEEDED'
+      ? 'Could not load it: it uses Draco compression, which the playground cannot read yet. Export it without Draco (meshopt compression works), or use the textel command.'
+      : `Could not load it: ${(e as Error).message}`;
     return undefined;
   } finally {
     busy.hidden = true;

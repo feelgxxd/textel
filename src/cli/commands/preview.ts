@@ -32,11 +32,11 @@ const OPTIONS = {
   fps: { type: 'string' },
 } as const;
 
-export function run(argv: string[]) {
+export async function run(argv: string[]) {
   const { values: o, positionals } = parse(argv, OPTIONS);
   if (o.help) return void process.stdout.write(HELP);
   if (positionals.length > 1) fail(`unexpected argument "${positionals[1]}"`);
-  const input = loadInput(o, positionals);
+  const input = await loadInput(o, positionals);
   if (!input) return void process.stdout.write(HELP);
 
   const style = styleFrom(o, input.style);

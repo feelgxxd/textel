@@ -1,4 +1,7 @@
 import { MeshBuilder, type Mesh } from '../mesh.ts';
+import { decodeMeshopt, type MeshoptView } from './meshopt.ts';
+
+type Compressed = { buffer: number; byteOffset?: number; byteLength: number } & MeshoptView;
 
 // The parts of glTF 2.0 we read
 interface GltfJson {
@@ -6,17 +9,35 @@ interface GltfJson {
   scene?: number;
   scenes?: { nodes?: number[] }[];
   nodes?: { children?: number[]; mesh?: number; matrix?: number[]; translation?: number[]; rotation?: number[]; scale?: number[] }[];
-  meshes?: { primitives: { attributes: Record<string, number>; indices?: number; material?: number; mode?: number }[] }[];
+  meshes?: { primitives: {
+    attributes: Record<string, number>; indices?: number; material?: number; mode?: number;
+    extensions?: { KHR_draco_mesh_compression?: { bufferView: number; attributes: Record<string, number> } };
+  }[] }[];
   materials?: { name?: string; pbrMetallicRoughness?: { baseColorFactor?: number[]; baseColorTexture?: unknown } }[];
   accessors?: { bufferView?: number; byteOffset?: number; componentType: number; normalized?: boolean; count: number; type: string }[];
-  bufferViews?: { buffer: number; byteOffset?: number; byteLength: number; byteStride?: number }[];
+  bufferViews?: {
+    buffer: number; byteOffset?: number; byteLength: number; byteStride?: number;
+    extensions?: { EXT_meshopt_compression?: Compressed; KHR_meshopt_compression?: Compressed };
+  }[];
   buffers?: { uri?: string; byteLength: number }[];
   extensionsRequired?: string[];
 }
 
+/**
+ * Decodes one Draco compressed primitive: its triangle indices, and for each attribute name its
+ * values, `components` per point in the accessor's own component type (not normalized).
+ * `createDracoDecoder()` from `@feelgxxd/textel/draco` makes one.
+ */
+export type DracoDecode = (
+  data: Uint8Array,
+  attributes: Record<string, { id: number; components: number; componentType: number }>,
+) => { indices: Uint32Array; attributes: Record<string, ArrayLike<number>> };
+
 export interface GltfOptions {
   /** loads an external buffer (`.gltf` with a separate `.bin`) by its uri */
   resolve?: (uri: string) => Uint8Array;
+  /** reads Draco compressed meshes; without it they are an error with `code` 'DRACO_DECODER_NEEDED' */
+  draco?: DracoDecode;
 }
 
 const COMPONENTS: Record<string, number> = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT2: 4, MAT3: 9, MAT4: 16 };
@@ -40,47 +61,81 @@ export function parseGLTF(bytes: Uint8Array, opts: GltfOptions = {}): Mesh {
     json = JSON.parse(new TextDecoder().decode(bytes));
   }
 
-  // quantized attributes (KHR_mesh_quantization) are fine: `read` handles every component type
-  const unsupported = (json.extensionsRequired ?? []).filter((e) => e === 'KHR_draco_mesh_compression' || e === 'EXT_meshopt_compression');
-  if (unsupported.length) throw new Error(`compressed glTF (${unsupported.join(', ')}) is not supported yet; export it without compression`);
-
-  const buffers = (json.buffers ?? []).map((buf, i) => {
+  // quantized attributes (KHR_mesh_quantization) are fine: `read` handles every component type.
+  // Buffers are loaded when first used: a meshopt fallback buffer may have no data at all.
+  const buffers: Uint8Array[] = [];
+  const buffer = (i: number) => {
+    if (buffers[i]) return buffers[i];
+    const buf = json.buffers?.[i];
+    if (!buf) throw new Error(`missing buffer ${i}`);
     if (buf.uri === undefined) {
       if (!bin) throw new Error(`buffer ${i} has no data`);
-      return bin;
+      return (buffers[i] = bin);
     }
     const m = /^data:[^,]*;base64,(.*)$/.exec(buf.uri);
-    if (m) return base64(m[1]);
+    if (m) return (buffers[i] = base64(m[1]));
     if (!opts.resolve) throw new Error(`external buffer "${buf.uri}" needs a resolver`);
-    return opts.resolve(decodeURIComponent(buf.uri));
-  });
+    return (buffers[i] = opts.resolve(decodeURIComponent(buf.uri)));
+  };
+  // a buffer view's bytes and stride, decoded when it is meshopt compressed
+  const views: { bytes: Uint8Array; stride: number }[] = [];
+  const view = (i: number) => {
+    if (views[i]) return views[i];
+    const bv = json.bufferViews?.[i];
+    if (!bv) throw new Error(`missing buffer view ${i}`);
+    const c = bv.extensions?.EXT_meshopt_compression ?? bv.extensions?.KHR_meshopt_compression;
+    const slice = (s: { buffer: number; byteOffset?: number; byteLength: number }) => buffer(s.buffer).subarray(s.byteOffset ?? 0, (s.byteOffset ?? 0) + s.byteLength);
+    return (views[i] = c ? { bytes: decodeMeshopt(slice(c), c), stride: c.byteStride } : { bytes: slice(bv), stride: bv.byteStride ?? 0 });
+  };
 
-  const read = (index: number): { data: Float32Array; size: number; count: number } => {
+  // normalized integers become -1..1 or 0..1
+  const unit = (ct: number) => (ct === 5123 ? 65535 : ct === 5122 ? 32767 : ct === 5121 ? 255 : ct === 5120 ? 127 : 1);
+  const read = (index: number, raw?: ArrayLike<number>): { data: Float32Array; size: number; count: number } => {
     const acc = json.accessors?.[index];
     if (!acc) throw new Error(`missing accessor ${index}`);
-    const size = COMPONENTS[acc.type] ?? 1, out = new Float32Array(acc.count * size);
+    const size = COMPONENTS[acc.type] ?? 1, out = new Float32Array(acc.count * size), ct = acc.componentType;
+    const k = acc.normalized ? 1 / unit(ct) : 0;
+    if (raw) {
+      // decoded data: trust its own length over the accessor's count
+      const count = Math.floor(raw.length / size), data = new Float32Array(count * size);
+      for (let i = 0; i < data.length; i++) data[i] = k ? Math.max(raw[i] * k, -1) : raw[i];
+      return { data, size, count };
+    }
     if (acc.bufferView === undefined) return { data: out, size, count: acc.count };
-    const bv = json.bufferViews![acc.bufferView], buf = buffers[bv.buffer];
-    const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-    const ct = acc.componentType;
+    const { bytes, stride: bs } = view(acc.bufferView);
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const csize = ct === 5126 || ct === 5125 ? 4 : ct === 5123 || ct === 5122 ? 2 : 1;
-    const stride = bv.byteStride || csize * size, base = (bv.byteOffset ?? 0) + (acc.byteOffset ?? 0);
-    const norm = !!acc.normalized;
+    const stride = bs || csize * size, base = acc.byteOffset ?? 0;
     for (let e = 0; e < acc.count; e++) for (let c = 0; c < size; c++) {
       const o = base + e * stride + c * csize;
       let x: number;
       switch (ct) {
-        case 5126: x = view.getFloat32(o, true); break;
-        case 5125: x = view.getUint32(o, true); break;
-        case 5123: x = view.getUint16(o, true); if (norm) x /= 65535; break;
-        case 5122: x = view.getInt16(o, true); if (norm) x = Math.max(x / 32767, -1); break;
-        case 5121: x = view.getUint8(o); if (norm) x /= 255; break;
-        case 5120: x = view.getInt8(o); if (norm) x = Math.max(x / 127, -1); break;
+        case 5126: x = dv.getFloat32(o, true); break;
+        case 5125: x = dv.getUint32(o, true); break;
+        case 5123: x = dv.getUint16(o, true); break;
+        case 5122: x = dv.getInt16(o, true); break;
+        case 5121: x = dv.getUint8(o); break;
+        case 5120: x = dv.getInt8(o); break;
         default: throw new Error(`unknown component type ${ct}`);
       }
-      out[e * size + c] = x;
+      out[e * size + c] = k ? Math.max(x * k, -1) : x;
     }
     return { data: out, size, count: acc.count };
+  };
+
+  // a Draco primitive: decode it once, then read its attributes like any other accessor
+  const draco = (prim: NonNullable<GltfJson['meshes']>[number]['primitives'][number]) => {
+    const ext = prim.extensions?.KHR_draco_mesh_compression;
+    if (!ext) return null;
+    if (!opts.draco) {
+      throw Object.assign(new Error('this glTF uses Draco compression, which needs a decoder: see createDracoDecoder in @feelgxxd/textel/draco'), { code: 'DRACO_DECODER_NEEDED' });
+    }
+    const want: Parameters<DracoDecode>[1] = {};
+    for (const [name, id] of Object.entries(ext.attributes)) {
+      const acc = json.accessors?.[prim.attributes[name]];
+      if (acc) want[name] = { id, components: COMPONENTS[acc.type] ?? 1, componentType: acc.componentType };
+    }
+    return opts.draco(view(ext.bufferView).bytes, want);
   };
 
   const b = new MeshBuilder();
@@ -105,12 +160,13 @@ export function parseGLTF(bytes: Uint8Array, opts: GltfOptions = {}): Mesh {
       const mode = prim.mode ?? 4;
       if (mode !== 4 && mode !== 5 && mode !== 6) continue; // points and lines
       if (prim.attributes.POSITION === undefined) continue;
-      const pos = read(prim.attributes.POSITION);
-      const nor = prim.attributes.NORMAL !== undefined ? read(prim.attributes.NORMAL) : null;
+      const dr = draco(prim);
+      const attr = (name: string) => (prim.attributes[name] === undefined ? null : read(prim.attributes[name], dr?.attributes[name]));
+      const pos = attr('POSITION')!, nor = attr('NORMAL');
       const mat = b.material(matName(prim.material)), base = baseColor(prim.material);
       b.materialColor(mat, [toSRGB(base[0]), toSRGB(base[1]), toSRGB(base[2])]);
       if (prim.material !== undefined && json.materials?.[prim.material]?.pbrMetallicRoughness?.baseColorTexture) b.textured = true;
-      const col = prim.attributes.COLOR_0 !== undefined ? read(prim.attributes.COLOR_0) : null;
+      const col = attr('COLOR_0');
       const first = b.positions.length / 3;
       for (let v = 0; v < pos.count; v++) {
         const x = pos.data[v * 3], y = pos.data[v * 3 + 1], z = pos.data[v * 3 + 2];
@@ -122,7 +178,7 @@ export function parseGLTF(bytes: Uint8Array, opts: GltfOptions = {}): Mesh {
         // the renderer multiplies these by the material's base color
         if (col) b.vertexColor(first + v, toSRGB(col.data[v * col.size]), toSRGB(col.data[v * col.size + 1]), toSRGB(col.data[v * col.size + 2]));
       }
-      const idx = prim.indices !== undefined ? read(prim.indices).data : null;
+      const idx = dr ? dr.indices : prim.indices !== undefined ? read(prim.indices).data : null;
       const n = idx ? idx.length : pos.count;
       const get = (k: number) => first + (idx ? idx[k] : k);
       if (mode === 4) for (let k = 0; k + 2 < n; k += 3) b.triangle(get(k), get(k + 1), get(k + 2), mat);

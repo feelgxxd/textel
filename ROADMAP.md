@@ -28,7 +28,7 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | | |
 |---|---|
 | Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 97 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
+| Tests | 102 (loaders, compressed glTF against meshoptimizer and draco3d, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
@@ -54,7 +54,7 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | Live preview keys (`live.ts`) are only tested by hand; the screen and player under them are tested with fake streams | a key handling regression in preview would only show by hand | any time |
 | Checked by hand in desktop Chrome and one phone browser only | Safari, Firefox and other phones may differ | 1.0 |
 | Examples `rocket` and `mug` read less clearly than the others | weaker first impression | any time |
-| Draco / meshopt glTF rejected | some real files do not load | 1.0 |
+| Draco glTF needs the draco3d package; not read in the browser | Draco files do not load in the playground and the viewer | after 1.0 |
 | Base color textures not read | textured models show plain material colors with `color: 'model'`; a note says so | after 1.0 |
 
 ---
@@ -212,7 +212,8 @@ Effort: **three to four sessions**, spread over the milestones above where possi
 - [x] A note when a model keeps its colors in image textures (texture support itself moved after 1.0)
 - [x] Smooth shading for models without normals, with a crease angle so hard edges stay hard
 - [x] Large models: drawn from a simplified copy above a triangle budget (`maxTriangles`, vertex clustering)
-- [ ] Draco and meshopt compressed glTF
+- [x] Compressed glTF: meshopt (EXT and KHR) decoded by textel itself, everywhere; Draco through the
+  optional `draco3d` package in the CLI and the library
 
 ### API
 - [ ] Review everything `src/index.ts` exports; mark internals as internal, freeze names and options
@@ -296,6 +297,5 @@ Made:
 
 ## Next session starts with
 
-1. 1.0 quality, continued: compressed glTF;
-   then the API review that freezes names and options
+1. The API review that freezes names and options
 2. Docs on the playground site

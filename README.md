@@ -14,7 +14,10 @@ npx @feelgxxd/textel model.stl --once > art.txt  # one frame as plain text
 
 Install it once with `npm install -g @feelgxxd/textel` and the command is just `textel`. Needs Node 22 or newer.
 
-Reads `.glb`, `.gltf`, `.obj` and `.stl`. Everything runs locally; nothing is uploaded.
+Reads `.glb`, `.gltf`, `.obj` and `.stl`, including meshopt compressed glTF (gltfpack, gltf-transform).
+Draco compressed glTF needs Google's `draco3d` package, which textel does not ship: `npm i -g draco3d`
+next to a global textel, or `npm i draco3d` in your project. The playground and the viewer do not read
+Draco yet. Everything runs locally; nothing is uploaded.
 
 ## Playground
 
@@ -80,7 +83,7 @@ Two elements, both without dependencies and both loaded with one script tag:
 | | `<textel-player>` | `<textel-viewer>` |
 |---|---|---|
 | shows | a recorded loop (`.textel.json`) | the model itself, rendered live |
-| size | about 3 KB | about 14 KB |
+| size | about 3 KB | about 16 KB |
 | dragging | scrubs through the loop | turns the model any way, with a flick |
 | best for | a spinning logo | something people play with |
 
@@ -248,6 +251,14 @@ const renderer = createRenderer(mesh, { width: 112, height: 56, aspect: 1.5, cha
 const frame = renderer.render({ yaw: 0.5 });
 pre.innerHTML = toHTML(frame);            // browser
 process.stdout.write(toANSI(frame).join('\n'));  // terminal
+```
+
+Draco compressed files need a decoder, made once from the `draco3d` package:
+
+```ts
+import { createDracoDecoder } from '@feelgxxd/textel/draco';
+
+const mesh = parseModel(bytes, 'model.glb', { draco: await createDracoDecoder() });
 ```
 
 ### Shapes in code

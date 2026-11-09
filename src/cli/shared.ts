@@ -1,8 +1,11 @@
 // Pieces every command shares: argument parsing, model input, style flags, color detection.
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { basename, dirname, resolve } from 'node:path';
 import { parseArgs, type ParseArgsConfig } from 'node:util';
 import { buildExample, EXAMPLES, findExample } from '../examples.ts';
+import { createDracoDecoder } from '../loaders/draco.ts';
+import type { GltfOptions } from '../loaders/gltf.ts';
 import { parseModel } from '../loaders/index.ts';
 import type { Mesh } from '../mesh.ts';
 import type { ColorDepth } from '../output.ts';
@@ -114,8 +117,22 @@ export interface Input {
   style: StyleInput;
 }
 
+/** draco3d from textel's own install, or else from the folder textel runs in */
+async function dracoModule(): Promise<unknown> {
+  const name = 'draco3d';
+  let pkg: { createDecoderModule(o: object): Promise<unknown> };
+  try {
+    pkg = await import(name);
+  } catch {
+    try { pkg = createRequire(resolve('package.json'))(name); } catch {
+      fail('this file uses Draco compression, which needs the draco3d package: npm i -g draco3d (or npm i draco3d in this folder)');
+    }
+  }
+  return ((pkg as { default?: typeof pkg }).default ?? pkg).createDecoderModule({});
+}
+
 /** the model from `--example` or the first positional; null when neither was given */
-export function loadInput(values: InputValues, positionals: string[]): Input | null {
+export async function loadInput(values: InputValues, positionals: string[]): Promise<Input | null> {
   if (values.example) {
     const ex = findExample(values.example) ?? fail(`no example "${values.example}" (have: ${EXAMPLES.map((e) => e.name).join(', ')})`);
     return { mesh: buildExample(ex), name: ex.title, style: ex.style };
@@ -125,10 +142,15 @@ export function loadInput(values: InputValues, positionals: string[]): Input | n
   const file = resolve(arg);
   let bytes: Uint8Array;
   try { bytes = readFileSync(file); } catch { fail(`cannot read ${arg}`); }
-  try {
-    return { mesh: parseModel(bytes, file, { resolve: (uri) => readFileSync(resolve(dirname(file), uri)) }), name: basename(file), style: {} };
-  } catch (e) {
-    fail(`${basename(file)}: ${(e as Error).message}`);
+  const opts: GltfOptions = { resolve: (uri) => readFileSync(resolve(dirname(file), uri)) };
+  for (;;) {
+    try {
+      return { mesh: parseModel(bytes, file, opts), name: basename(file), style: {} };
+    } catch (e) {
+      // Draco needs a package textel does not ship: load it only for the files that use it
+      if ((e as { code?: string }).code === 'DRACO_DECODER_NEEDED' && !opts.draco) opts.draco = await createDracoDecoder(await dracoModule());
+      else fail(`${basename(file)}: ${(e as Error).message}`);
+    }
   }
 }
 

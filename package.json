@@ -48,6 +48,10 @@
       "types": "./dist/frames.d.ts",
       "default": "./dist/frames.js"
     },
+    "./draco": {
+      "types": "./dist/loaders/draco.d.ts",
+      "default": "./dist/loaders/draco.js"
+    },
     "./player": {
       "types": "./dist/browser/player.d.ts",
       "default": "./dist/textel-player.js"
@@ -83,11 +87,21 @@
     "site": "vite --config site/vite.config.ts",
     "site:build": "vite build --config site/vite.config.ts"
   },
+  "peerDependencies": {
+    "draco3d": "^1.5.0"
+  },
+  "peerDependenciesMeta": {
+    "draco3d": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@happy-dom/global-registrator": "^21.0.4",
     "@types/node": "^24.0.0",
+    "draco3d": "^1.5.7",
     "esbuild": "^0.28.2",
     "happy-dom": "^21.0.4",
+    "meshoptimizer": "^1.0.1",
     "typescript": "^5.9.0",
     "vite": "^8.3.6"
   },

@@ -107,11 +107,6 @@ test('glb: node transforms, normals and material names', () => {
   assert.ok(Math.abs(m.normals![2] - 1) < 1e-6);
 });
 
-test('glb: compressed files are rejected with a useful message', () => {
-  const json = new TextEncoder().encode(JSON.stringify({ asset: { version: '2.0' }, extensionsRequired: ['KHR_draco_mesh_compression'] }));
-  assert.throws(() => parseGLTF(json), /not supported yet/);
-});
-
 test('parseModel picks the parser by extension or content', () => {
   assert.equal(parseModel(new TextEncoder().encode(CUBE_OBJ), 'cube.obj').indices.length, 36);
   assert.equal(parseModel(new TextEncoder().encode(CUBE_OBJ)).indices.length, 36);

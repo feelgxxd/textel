@@ -16,6 +16,12 @@ the API may still change between minor versions. The frames file format has its 
   Textures are not read yet: when a model keeps its colors in one, the CLI and the playground say so
   (`Mesh.textured`). The examples have colors of their own, and `sdfToMesh` takes a `color`
   function
+- Compressed glTF. meshopt (`EXT_meshopt_compression` and `KHR_meshopt_compression`, as gltfpack and
+  gltf-transform write it) is decoded by textel itself, in the CLI, the library, the viewer and the
+  playground. Draco (`KHR_draco_mesh_compression`) goes through Google's `draco3d` package, an optional
+  peer that textel does not ship: the CLI loads it when a file needs it and says how to install it
+  otherwise; in the library, `createDracoDecoder()` from `@feelgxxd/textel/draco` makes the `draco`
+  option of `parseModel` and `parseGLTF`
 - `Mesh.colors` and `Mesh.materialColors`, `MeshBuilder.vertexColor()` and `materialColor()`, and
   `Frame.rgb`; `parseOBJ` takes `{ resolve }` for the material library
 - Models without normals (STL, many OBJ files) shade smooth except across folds sharper than
@@ -30,7 +36,7 @@ the API may still change between minor versions. The frames file format has its 
   simplifying them takes about 160 ms once. `simplifyMesh()` in the library
 
 ### Changed
-- The viewer is about 14 KB gzipped (was 11 KB), with steady glyphs, model colors and simplifying; its size budget is now 15 KB
+- The viewer is about 16 KB gzipped (was 11 KB), with steady glyphs, model colors, simplifying and meshopt; its size budget is now 17 KB
 
 ### Fixed
 - `setStyle({ shading: 'flat' })` on a renderer that had drawn smooth kept drawing smooth
