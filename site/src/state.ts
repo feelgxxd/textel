@@ -82,6 +82,16 @@ export async function encodeState(s: State): Promise<string> {
   return 'j.' + toB64url(json);
 }
 
+/** JSON with sorted keys and no undefined fields, so equal states compare equal */
+const canonical = (v: unknown): string => JSON.stringify(v, (_, x) =>
+  x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).filter(([, y]) => y !== undefined).sort(([a], [b]) => (a < b ? -1 : 1))) : x);
+
+/** true when nothing differs from the page's starting state, so the address can stay plain */
+export const isDefaultState = (s: State) => canonical(s) === canonical(DEFAULT_STATE);
+
+/** the hash for a state: empty for the starting state */
+export const stateHash = async (s: State) => (isDefaultState(s) ? '' : '#' + (await encodeState(s)));
+
 /** null for an empty or broken hash; a broken link must never break the page */
 export async function decodeState(hash: string): Promise<State | null> {
   const h = hash.replace(/^#/, '');

@@ -13,8 +13,8 @@ import type { Mesh } from '../../src/mesh.ts';
 import { createRenderer } from '../../src/render.ts';
 import { DEFAULTS, mergeStyles, type EdgeMode, type MaterialInput } from '../../src/style.ts';
 import {
-  anglesFromLight, CHARSET_NAMES, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles,
-  needsPreset, presetJSON, PRESETS, standaloneHTML, type State,
+  anglesFromLight, CHARSET_NAMES, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, lightFromAngles,
+  needsPreset, presetJSON, PRESETS, standaloneHTML, stateHash, type State,
 } from './state.ts';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -188,7 +188,7 @@ const tabs = ['Live on a page', 'Recorded loop', 'Image', 'Terminal', 'Preset'] 
 let tab: (typeof tabs)[number] = tabs[0];
 const shareButton = h('button', { type: 'button', class: 'primary' }, 'Copy link to this look');
 shareButton.addEventListener('click', async () => {
-  history.replaceState(null, '', '#' + (await encodeState(state)));
+  await syncHash();
   copy(location.href, shareButton);
 });
 
@@ -347,7 +347,12 @@ function changed() {
   renderExports();
   // keep the address bar current, quietly
   clearTimeout(hashTimer);
-  hashTimer = window.setTimeout(async () => history.replaceState(null, '', '#' + (await encodeState(state))), 400);
+  hashTimer = window.setTimeout(syncHash, 400);
+}
+
+/** the look in the address bar; a page that still looks as it started keeps a plain address */
+async function syncHash() {
+  history.replaceState(null, '', location.pathname + location.search + (await stateHash(state)));
 }
 
 function showStatus() {

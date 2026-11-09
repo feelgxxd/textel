@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  anglesFromLight, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles, needsPreset, presetJSON, PRESETS, standaloneHTML, VERSION, type State,
+  anglesFromLight, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles, needsPreset, presetJSON, PRESETS, standaloneHTML, stateHash, VERSION, type State,
 } from '../site/src/state.ts';
 
 const state = (look: State['look'], extra: Partial<State> = {}): State => ({ ...DEFAULT_STATE, look, ...extra });
@@ -100,4 +100,13 @@ test('site: a single-file page carries the player and the frames, and nothing cl
   // the escaped data still reads back as the same frames
   const literal = script.slice(script.indexOf('.recording = ') + 13, script.lastIndexOf(';'));
   assert.deepEqual(JSON.parse(literal.replace(/<\\\//g, '</')), JSON.parse(frames));
+});
+
+test('site: the address stays plain until the look changes', async () => {
+  assert.equal(await stateHash(structuredClone(DEFAULT_STATE)), '');
+  // the same state reached another way: keys in another order, a field set back to undefined
+  const back = { example: 'gem', page: { bg: '#111214', fg: '#e8e8e8' }, cols: 96, look: { light: [-0.3, 0.35, 0.88], spin: 0.66, pitch: 0.3, charset: 'hard', chars: undefined } } as State;
+  assert.equal(await stateHash(back), '');
+  assert.match(await stateHash(state({ ...DEFAULT_STATE.look, edges: 'outline' })), /^#z\./);
+  assert.match(await stateHash({ ...structuredClone(DEFAULT_STATE), example: 'donut' }), /^#z\./);
 });
