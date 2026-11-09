@@ -169,6 +169,12 @@ its text follows the reader's light or dark theme. It shows a still frame to rea
 motion. The playground makes one from its **Image** tab, and the library from any recording with
 `recordingSVG(recording, { color, background, cell })`.
 
+### GIF and video
+
+For chats and social posts, the playground's **Image** tab also makes a GIF (640×640, about 600 KB) and
+an MP4 video (1280×1280, about 1.4 MB), both one turn in 4 seconds in the page colors. They are made in
+your browser; the video needs a browser that can encode H.264 (current Chrome, Edge and Safari).
+
 ## Presets
 
 A preset is the whole look in one JSON file. The same file works with the CLI and the library.

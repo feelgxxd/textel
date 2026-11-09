@@ -67,3 +67,4 @@ button, select, input, textarea { font: inherit; color: inherit; }
 .drop-overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgb(0 0 0 / .7); font: 600 22px var(--mono); color: var(--accent); border: 3px dashed var(--accent); z-index: 10; pointer-events: none; }
 .check { display: flex; align-items: center; gap: 6px; margin: 4px 0 10px; color: var(--mute); cursor: pointer; }
 .check input { accent-color: var(--accent); }
+.row { display: flex; flex-wrap: wrap; gap: 6px; }

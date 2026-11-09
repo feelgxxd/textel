@@ -4,6 +4,9 @@ import '../../src/browser/viewer.ts';
 import type { TextelViewer } from '../../src/browser/viewer.ts';
 import { EXAMPLES } from '../../src/examples.ts';
 import { RecordingBuilder, recordingSVG, stringifyFrames } from '../../src/frames.ts';
+import { encodeGIF } from './gif.ts';
+import { indexed, inkPalette, rasterize } from './raster.ts';
+import { canEncodeVideo, encodeMP4 } from './video.ts';
 import { parseModelAsync } from '../../src/loaders/index.ts';
 import type { Mesh } from '../../src/mesh.ts';
 import { createRenderer } from '../../src/render.ts';
@@ -69,8 +72,8 @@ function section(title: string, open: boolean, ...body: HTMLElement[]) {
   return h('details', { class: 'panel', ...(open ? { open: true } : {}) }, h('summary', {}, title), ...body);
 }
 
-function download(text: string, name: string, type = 'application/json') {
-  const url = URL.createObjectURL(new Blob([text], { type }));
+function download(data: string | Blob, name: string, type = 'application/json') {
+  const url = URL.createObjectURL(typeof data === 'string' ? new Blob([data], { type }) : data);
   const a = h('a', { href: url, download: name });
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -197,7 +200,7 @@ function codeBlock(text: string) {
 
 const presetButton = () => h('button', { type: 'button', onclick: () => download(presetJSON(state.look), 'look.json') }, 'Download look.json');
 
-let recording = false, svgPageColors = false;
+let recording = false, svgPageColors = false, made = '', progressText = '';
 function renderExports() {
   const base = modelFile.replace(/\.[a-z0-9]+$/i, '');
   const body: HTMLElement[] = [];
@@ -211,15 +214,22 @@ function renderExports() {
     body.push(h('p', { class: 'note' }, 'One full turn rendered once and saved as a file. The player is about 3 KB and needs no 3D code.'), rec);
     body.push(codeBlock(embedSnippet(state, 'player', `${base}.textel.json`)));
   } else if (tab === 'Image') {
-    const svg = h('button', { type: 'button', class: 'primary', disabled: !mesh || recording }, recording ? 'Recording…' : `Make ${base}.svg`);
-    svg.addEventListener('click', () => recordLoop(svg, base, 'svg'));
+    const make = (kind: 'svg' | 'gif' | 'mp4', primary = false) => {
+      const b = h('button', { type: 'button', class: primary ? 'primary' : '', disabled: !mesh || recording }, `Make ${base}.${kind}`);
+      b.addEventListener('click', () => recordLoop(b, base, kind));
+      return b;
+    };
     const pageColors = h('input', { type: 'checkbox', checked: svgPageColors, onchange: (e: Event) => { svgPageColors = (e.target as HTMLInputElement).checked; } });
     body.push(
       h('p', { class: 'note' }, 'An animated SVG plays anywhere an image does, with no script: a GitHub README, docs, a blog. Without page colors it is transparent and follows the reader\'s light or dark theme.'),
       h('label', { class: 'check' }, pageColors, ' Use the page colors'),
-      svg,
+      make('svg', true),
       codeBlock(`![${base}](${base}.svg)`),
+      h('p', { class: 'note' }, 'A GIF or a video for chats and social posts, in the page colors. The video is twice as sharp; the GIF plays everywhere.'),
+      h('div', { class: 'row' }, make('gif'), ...(canEncodeVideo() ? [make('mp4')] : [])),
     );
+    if (recording) body.push(h('p', { class: 'note' }, progressText));
+    else if (made) body.push(h('p', { class: 'note' }, made));
   } else if (tab === 'Terminal') {
     body.push(h('p', { class: 'note' }, 'Needs Node 22 or newer.'));
     body.push(codeBlock(cliCommand(state, 'preview', modelFile) + '\n' + cliCommand(state, 'render', modelFile)));
@@ -238,31 +248,57 @@ function renderExports() {
   );
 }
 
-async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' | 'svg') {
+async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' | 'svg' | 'gif' | 'mp4') {
   if (!mesh) return;
   recording = true;
-  button.disabled = true;
+  made = '';
+  for (const b of exportsBox.querySelectorAll<HTMLButtonElement>('button:not([role=tab])')) b.disabled = true;
+  const say = async (text: string) => {
+    progressText = button.textContent = text;
+    await new Promise((res) => setTimeout(res));
+  };
+  const name = kind === 'json' ? `${base}.textel.json` : `${base}.${kind}`;
   try {
-    // an image is smaller: every frame is stored whole, so fewer frames and cells keep it light;
-    // both take 4 s for a turn
-    const [width, height, frames, fps] = kind === 'svg' ? [80, 40, 80, 20] : [112, 56, 120, 30];
+    // a recorded loop plays back from data; the images store every frame whole, so fewer frames and
+    // cells keep them light. All of them take 4 s for a turn
+    const [width, height, frames, fps] = kind === 'json' ? [112, 56, 120, 30] : [80, 40, 80, 20];
     const r = createRenderer(mesh, mergeStyles(state.look, { width, height, aspect: 2 }));
     const b = new RecordingBuilder();
     for (let i = 0; i < frames; i++) {
       b.add(r.render({ yaw: (i / frames) * Math.PI * 2 }));
-      if (i % 8 === 7) {
-        button.textContent = `Recording… ${Math.round(((i + 1) / frames) * 100)}%`;
-        await new Promise((res) => setTimeout(res));
-      }
+      if (i % 8 === 7) await say(`Rendering… ${Math.round(((i + 1) / frames) * 100)}%`);
     }
     const rec = b.build(fps, { title: base, generator: 'textel playground' });
-    if (kind === 'json') download(stringifyFrames(rec), `${base}.textel.json`);
-    else download(recordingSVG(rec, { title: base, ...(svgPageColors ? { color: state.page.fg, background: state.page.bg } : {}) }), `${base}.svg`, 'image/svg+xml');
+    let file: BlobPart, type: string;
+    if (kind === 'json') [file, type] = [stringifyFrames(rec), 'application/json'];
+    else if (kind === 'svg') [file, type] = [recordingSVG(rec, { title: base, ...(svgPageColors ? { color: state.page.fg, background: state.page.bg } : {}) }), 'image/svg+xml'];
+    else {
+      const look = { color: state.page.fg, background: state.page.bg };
+      if (kind === 'gif') {
+        const raster = rasterize(rec, { ...look, cell: 8 }), pal = inkPalette(raster.inks), px: Uint8Array[] = [];
+        for (let i = 0; i < frames; i++) {
+          px.push(indexed(raster.draw(i), raster.width, raster.height, pal));
+          if (i % 4 === 3) await say(`Drawing… ${Math.round(((i + 1) / frames) * 100)}%`);
+        }
+        await say('Encoding…');
+        [file, type] = [encodeGIF({ width: raster.width, height: raster.height, palette: pal.palette, frames: px, delay: 100 / fps }), 'image/gif'];
+      } else {
+        const raster = rasterize(rec, { ...look, cell: 16, even: true });
+        [file, type] = [await encodeMP4(raster, frames, fps, async (n) => { if (n % 4 === 0) await say(`Encoding… ${Math.round((n / frames) * 100)}%`); }), 'video/mp4'];
+      }
+    }
+    const blob = new Blob([file], { type });
+    download(blob, name);
+    made = `Made ${name}: ${size(blob.size)}`;
+  } catch (e) {
+    made = `Could not make ${name}: ${(e as Error).message}`;
   } finally {
     recording = false;
     renderExports();
   }
 }
+
+const size = (n: number) => (n < 1024 * 1024 ? `${Math.round(n / 1024)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
 
 // ---------- applying the state ----------
 

@@ -27,7 +27,7 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | | |
 |---|---|
 | Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 83 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, 10 golden-frame snapshots) |
+| Tests | 86 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 10 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
@@ -188,8 +188,10 @@ Effort: **two sessions**.
 - [x] **Animated SVG**: one `<text>` per row per frame, stepped with CSS animation; works inside GitHub
   READMEs where scripts do not run. 80×40 × 80 frames at 20 fps is ~290 KB (24 KB gzipped) without color; the
   playground makes it at that size, the CLI at any size. The README shows one
-- [ ] **GIF and MP4**: done in the playground with canvas (and WebCodecs for MP4 where available);
-  from the CLI as an optional add-on so the main package stays dependency-free
+- [x] **GIF and MP4** in the playground: canvas, an own GIF encoder (only changed pixels per frame) and an
+  own MP4 writer around WebCodecs H.264. 640×640 GIF ~600 KB, 1280×1280 MP4 ~1.4 MB for one 4 s turn
+- [ ] GIF and MP4 from the CLI: needs a way to draw glyphs without a browser (a bundled bitmap font, or
+  an optional add-on so the main package stays dependency-free); may move to the backlog
 - [ ] **Single frame**: PNG (playground), plain text and ANSI (CLI, already possible with `--once`)
 - [ ] **Single-file HTML**: player and frames inlined, works offline
 
@@ -287,6 +289,5 @@ Made:
 
 ## Next session starts with
 
-1. 0.5: GIF and MP4 from the playground
-2. Single-file HTML, and a PNG of one frame
-3. Release 0.5.0
+1. 0.5: single-file HTML, and a PNG of one frame
+2. Release 0.5.0

@@ -10,6 +10,9 @@ the API may still change between minor versions. The frames file format has its 
 - Animated SVG: `textel render <model> -o out.svg`, `recordingSVG()` in the library, and an **Image** tab in
   the playground. Plays without scripts, so it works in GitHub READMEs; follows the reader's light or dark
   theme when it has no colors of its own; still for readers who prefer reduced motion
+- GIF and MP4 from the playground's **Image** tab, made in the browser with no extra packages: a small
+  GIF encoder that stores only what changes between frames, and an MP4 writer around the browser's own
+  H.264 encoder
 
 ## 0.4.0 (2026-11-09)
 
