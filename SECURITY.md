@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-The latest release gets fixes. Before 1.0, only the newest 0.x does.
+The latest 1.x release gets fixes.
 
 ## Reporting a problem
 

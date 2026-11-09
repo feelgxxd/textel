@@ -3,7 +3,7 @@
 import { findExample } from '../../src/examples.ts';
 import { CHARSETS, type StyleInput, type Vec3 } from '../../src/style.ts';
 
-export const VERSION = '0.5';
+export const VERSION = '1.0';
 export const CDN = `https://cdn.jsdelivr.net/npm/@feelgxxd/textel@${VERSION}/dist`;
 
 /** colors of the box around the picture, used by the preview and by the embed snippets */

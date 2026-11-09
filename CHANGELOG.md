@@ -1,10 +1,15 @@
 # Changelog
 
-All notable changes to textel. Versions follow [semantic versioning](https://semver.org); before 1.0
-the API may still change between minor versions. The frames file format has its own version
-(see [docs/format.md](docs/format.md)).
+All notable changes to textel. Versions follow [semantic versioning](https://semver.org): from 1.0, a
+change that breaks code using textel needs a new major version. The frames file format has its own
+version (see [docs/format.md](docs/format.md)), so a new package version never stops old files playing.
 
-## Unreleased
+## 1.0.0 (2026-11-09)
+
+The first stable release. The names, options and file format are frozen; from here on they change only
+in a new major version. Since 0.5: crease edges, steady glyphs, the model's own colors, smooth shading
+for models without normals, simplified drawing of very dense models, meshopt and Draco compressed glTF,
+an API review, and docs on the playground site.
 
 ### Added
 - `edges: 'crease'` (`--edges crease`, `edges="crease"`, the playground's Outline list, and `e` in the

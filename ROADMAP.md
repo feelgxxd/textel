@@ -4,7 +4,7 @@ textel turns 3D models into animated ASCII art. One engine, four ways to use it:
 the **CLI**, a lightweight **player**, a live **viewer** for the web, and a **playground** site.
 A single preset file describes the look and works the same everywhere.
 
-Each milestone ends with something people can use. Versions before 1.0 may change the API.
+Each milestone ends with something people can use. Since 1.0 the API is stable: breaking changes wait for a new major version.
 
 ## Principles
 
@@ -27,13 +27,13 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 
 | | |
 |---|---|
-| Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 102 (loaders, compressed glTF against meshoptimizer and draco3d, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
+| Code | ~4,250 lines of TypeScript in `src`, no runtime dependencies |
+| Tests | 105 (loaders, compressed glTF against meshoptimizer and draco3d, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
-| Web sizes | player 3.2 KB, viewer 13 KB, playground 19 KB (min+gzip) |
-| Published | `0.5.0` on npm; the playground deploys from `main` |
+| Web sizes | player 3.2 KB, viewer 16 KB, playground 33 KB, docs page 20 KB (min+gzip) |
+| Published | `1.0.0` on npm; the playground and the docs deploy from `main` |
 
 ### What works
 - `textel <model>` spins a `.glb` / `.gltf` / `.obj` / `.stl` in the terminal, with keys for rotation,
@@ -200,7 +200,7 @@ Effort: **two sessions**.
 
 ---
 
-## 1.0: release
+## 1.0: release ✅
 
 Effort: **three to four sessions**, spread over the milestones above where possible.
 
@@ -225,8 +225,8 @@ Effort: **three to four sessions**, spread over the milestones above where possi
 - [x] Terminal notes in the README: how colors are detected and fall back, cell aspect, glyphs beyond
   ASCII, size. Not every terminal is checked by hand; reports go in issues
 - [x] CONTRIBUTING, code of conduct, SECURITY (private reports through GitHub), issue and PR templates, CHANGELOG
-- [ ] Semantic versioning from here on; the frames format keeps its own version
-- [ ] Repo public (if not earlier) and `@feelgxxd/textel@1.0.0` on npm
+- [x] Semantic versioning from here on; the frames format keeps its own version
+- [x] Repo public and `@feelgxxd/textel@1.0.0` on npm
 
 ---
 
@@ -299,4 +299,5 @@ Made:
 
 ## Next session starts with
 
-1. Safari and Firefox checks by hand (playground, viewer, player), then 1.0.0
+1.0 is out. Next, picked from "Could do" by value: braille mode, shape-matched glyphs, base color
+textures, and a README badge / SVG service in the playground. Bugs and reports from users come first.
