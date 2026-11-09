@@ -19,7 +19,7 @@ export interface RecordOptions {
   /** starting yaw, radians */
   yaw?: number;
   /** colors are rounded to multiples of this per channel, which keeps the palette small (default 8) */
-  colorStep?: number;
+  colorRound?: number;
   meta?: Record<string, unknown>;
   /** called after each frame, for progress */
   onFrame?: (done: number, total: number) => void;
@@ -30,7 +30,7 @@ const hex = (c: RGB) => '#' + c.map((v) => Math.max(0, Math.min(255, Math.round(
 /** Renders a seamless turntable loop: the last frame leads straight back into the first. */
 export function recordLoop(renderer: Renderer, opts: RecordOptions = {}): Recording {
   const n = Math.max(1, Math.round(opts.frames ?? 120)), turns = opts.turns ?? 1, yaw0 = opts.yaw ?? 0;
-  const rec = new RecordingBuilder(opts.colorStep ?? 8);
+  const rec = new RecordingBuilder(opts.colorRound ?? 8);
   const yaw = (i: number) => yaw0 + (i / n) * turns * Math.PI * 2;
   // steady glyphs remember the frame before: spin once first, so the first frame follows the last
   if (renderer.style.steady > 0) for (let i = 0; i < n; i++) renderer.render({ yaw: yaw(i) });
@@ -49,8 +49,8 @@ export class RecordingBuilder {
   private first: Frame | null = null;
   private step: number;
 
-  constructor(colorStep = 8) {
-    this.step = Math.max(1, colorStep);
+  constructor(colorRound = 8) {
+    this.step = Math.max(1, colorRound);
   }
 
   add(frame: Frame) {

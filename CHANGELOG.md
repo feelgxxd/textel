@@ -36,6 +36,11 @@ the API may still change between minor versions. The frames file format has its 
   simplifying them takes about 160 ms once. `simplifyMesh()` in the library
 
 ### Changed
+- API review before 1.0. Removed: `computeSmoothNormals()` (use `creaseNormals(mesh, 180)`), the
+  `--list` flag (use `textel list`), and `toBase64` / `fromBase64`, which `@feelgxxd/textel/frames`
+  exported by accident. Renamed: `RecordOptions.colorStep` is `colorRound`, so it is not mistaken for the
+  style's `colorSteps`. Now exported: `ModelOptions` (the options of `parseModel`; `GltfOptions` and
+  `ObjOptions` are still there), `DracoDecode`, `ResolvedMaterial`, `ResolvedColor` and `parseOBJSteps`
 - The viewer is about 16 KB gzipped (was 11 KB), with steady glyphs, model colors, simplifying and meshopt; its size budget is now 17 KB
 
 ### Fixed

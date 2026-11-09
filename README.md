@@ -209,6 +209,9 @@ A preset is the whole look in one JSON file. The same file works with the CLI an
 }
 ```
 
+Camera angles are in radians (`pitch`, and `spin` in radians per second); `creaseAngle` is in degrees.
+`light` is a direction, not an angle: x right, y up, z toward you.
+
 Materials are matched by the names in the model file:
 
 | style | effect |

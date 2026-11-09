@@ -105,16 +105,6 @@ function normalizeAll(n: Float32Array): Float32Array {
   return n;
 }
 
-/**
- * Smooth vertex normals for a mesh that has none. Vertices at the same position are welded first,
- * so a triangle soup (STL) still shades smoothly. Each face contributes its area-weighted normal.
- */
-export function computeSmoothNormals(m: Mesh): Float32Array {
-  // smooth across every fold: each vertex ends up with one normal
-  const { normals, corners } = creaseNormals(m, 180), out = new Float32Array(m.positions.length);
-  for (let i = 0; i < corners.length; i++) out.set(normals.subarray(corners[i] * 3, corners[i] * 3 + 3), m.indices[i] * 3);
-  return out;
-}
 
 /** ids that are equal for vertices at the same position (quantized to 1e-5 of the model's size) */
 function weld(P: Float32Array): { ids: Uint32Array; count: number } {

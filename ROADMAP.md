@@ -216,7 +216,7 @@ Effort: **three to four sessions**, spread over the milestones above where possi
   optional `draco3d` package in the CLI and the library
 
 ### API
-- [ ] Review everything `src/index.ts` exports; mark internals as internal, freeze names and options
+- [x] Review everything `src/index.ts` exports; mark internals as internal, freeze names and options
 - [ ] Generated API reference from the doc comments
 
 ### Project
@@ -297,5 +297,4 @@ Made:
 
 ## Next session starts with
 
-1. The API review that freezes names and options
-2. Docs on the playground site
+1. Docs on the playground site, with a generated API reference

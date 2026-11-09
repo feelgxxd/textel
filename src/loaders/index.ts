@@ -1,9 +1,12 @@
 import type { Mesh } from '../mesh.ts';
-import { parseGLTF, type GltfOptions } from './gltf.ts';
-import { parseOBJ, parseOBJSteps } from './obj.ts';
+import { parseGLTF, type DracoDecode, type GltfOptions } from './gltf.ts';
+import { parseOBJ, parseOBJSteps, type ObjOptions } from './obj.ts';
 import { parseSTL } from './stl.ts';
 
-export { parseGLTF, parseOBJ, parseOBJSteps, parseSTL };
+export { parseGLTF, parseOBJ, parseOBJSteps, parseSTL, type DracoDecode, type GltfOptions, type ObjOptions };
+
+/** for every format: `resolve` loads files next to the model (`.bin`, `.mtl`), `draco` reads Draco glTF */
+export interface ModelOptions extends GltfOptions, ObjOptions {}
 
 export const MODEL_EXTENSIONS = ['.glb', '.gltf', '.obj', '.stl'];
 
@@ -26,14 +29,14 @@ function kindOf(bytes: Uint8Array, filename: string): Kind {
  * Parsing as a generator that yields now and then. Only text formats yield: binary glTF and STL
  * are fast enough to parse in one go.
  */
-export function* parseModelSteps(bytes: Uint8Array, filename = '', opts: GltfOptions = {}): Generator<void, Mesh> {
+export function* parseModelSteps(bytes: Uint8Array, filename = '', opts: ModelOptions = {}): Generator<void, Mesh> {
   const kind = kindOf(bytes, filename);
   if (kind === 'obj') return yield* parseOBJSteps(new TextDecoder().decode(bytes), opts);
   return kind === 'gltf' ? parseGLTF(bytes, opts) : parseSTL(bytes);
 }
 
 /** Picks a parser from the file name, falling back to sniffing the bytes. */
-export function parseModel(bytes: Uint8Array, filename = '', opts: GltfOptions = {}): Mesh {
+export function parseModel(bytes: Uint8Array, filename = '', opts: ModelOptions = {}): Mesh {
   const g = parseModelSteps(bytes, filename, opts);
   let r = g.next();
   while (!r.done) r = g.next();
@@ -44,7 +47,7 @@ export function parseModel(bytes: Uint8Array, filename = '', opts: GltfOptions =
  * parseModel without freezing a page: works in slices of about `sliceMs` and lets the event loop
  * run between them, so input and animation keep going while a large file loads.
  */
-export async function parseModelAsync(bytes: Uint8Array, filename = '', opts: GltfOptions = {}, sliceMs = 12): Promise<Mesh> {
+export async function parseModelAsync(bytes: Uint8Array, filename = '', opts: ModelOptions = {}, sliceMs = 12): Promise<Mesh> {
   const g = parseModelSteps(bytes, filename, opts);
   let t = performance.now();
   for (;;) {

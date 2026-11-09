@@ -48,8 +48,6 @@ function main(argv: string[]) {
     const c = COMMANDS[rest[0]] ?? fail(`no command "${rest[0]}" (have: ${Object.keys(COMMANDS).join(', ')})`);
     return void process.stdout.write(c.HELP);
   }
-  // kept from 0.1
-  if (first === '--list') return list.run(rest);
   const command = COMMANDS[first];
   if (command) return command.run(rest);
   // anything else is a model path or preview flags

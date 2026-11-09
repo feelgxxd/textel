@@ -5,7 +5,7 @@ import { basename, dirname, resolve } from 'node:path';
 import { parseArgs, type ParseArgsConfig } from 'node:util';
 import { buildExample, EXAMPLES, findExample } from '../examples.ts';
 import { createDracoDecoder } from '../loaders/draco.ts';
-import type { GltfOptions } from '../loaders/gltf.ts';
+import type { ModelOptions } from '../loaders/index.ts';
 import { parseModel } from '../loaders/index.ts';
 import type { Mesh } from '../mesh.ts';
 import type { ColorDepth } from '../output.ts';
@@ -142,7 +142,7 @@ export async function loadInput(values: InputValues, positionals: string[]): Pro
   const file = resolve(arg);
   let bytes: Uint8Array;
   try { bytes = readFileSync(file); } catch { fail(`cannot read ${arg}`); }
-  const opts: GltfOptions = { resolve: (uri) => readFileSync(resolve(dirname(file), uri)) };
+  const opts: ModelOptions = { resolve: (uri) => readFileSync(resolve(dirname(file), uri)) };
   for (;;) {
     try {
       return { mesh: parseModel(bytes, file, opts), name: basename(file), style: {} };
