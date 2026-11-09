@@ -54,7 +54,8 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | Live preview keys (`live.ts`) are only tested by hand; the screen and player under them are tested with fake streams | a key handling regression in preview would only show by hand | any time |
 | Checked by hand in desktop Chrome and one phone browser only | Safari, Firefox and other phones may differ | 1.0 |
 | Examples `rocket` and `mug` read less clearly than the others | weaker first impression | any time |
-| Draco / meshopt glTF rejected; base color textures not read | some real files do not load or show no colors | 1.0 |
+| Draco / meshopt glTF rejected | some real files do not load | 1.0 |
+| Base color textures not read | textured models show plain material colors with `color: 'model'`; a note says so | after 1.0 |
 
 ---
 
@@ -208,7 +209,7 @@ Effort: **three to four sessions**, spread over the milestones above where possi
   depth edges now tell a real step from a face that only slants away
 - [x] Steadier glyphs while spinning: hysteresis on ramp steps, edge directions and lines (`steady`)
 - [x] Model colors: vertex colors and material base color as a color mode (`color: 'model'`)
-- [ ] Base color textures: decode PNG and JPEG (the browser can; Node needs small decoders) and sample them
+- [x] A note when a model keeps its colors in image textures (texture support itself moved after 1.0)
 - [x] Smooth shading for models without normals, with a crease angle so hard edges stay hard
 - [ ] Large models: automatic decimation above a triangle budget
 - [ ] Draco and meshopt compressed glTF
@@ -237,6 +238,7 @@ Ideas that fit the project but are not on the path to 1.0. Value and effort are 
 | GIF and MP4 from the CLI | low | M | needs glyphs drawn without a browser: a bundled bitmap font that covers blocks and box drawing, or an optional add-on; the playground makes both today |
 | Half-block mode (two colored "pixels" per cell) | high | M | reads like pixel art; needs color |
 | Shape-matched glyphs | high | L | picks glyphs by the shape inside a cell, not only brightness; the biggest quality jump |
+| Base color textures | medium | M | decode PNG and JPEG (the browser can; Node needs small decoders), read UVs, average per cell so it does not speckle; only matters with `color: 'model'` |
 | Play the model's own glTF animations | high | L | skinning and morph targets; turntable stays the default |
 | GitHub README badge / SVG service in the playground | high | M | the most likely way people discover textel |
 | Text to 3D ASCII (extruded letters as an SDF) | medium | S | spinning logos from a word, no model needed |
@@ -294,6 +296,6 @@ Made:
 
 ## Next session starts with
 
-1. 1.0 quality, continued: base color textures, large models, compressed glTF;
+1. 1.0 quality, continued: large models, compressed glTF;
    then the API review that freezes names and options
 2. Docs on the playground site

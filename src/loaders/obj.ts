@@ -44,7 +44,7 @@ export function* parseOBJSteps(text: string, opts: ObjOptions = {}, slice = 4000
         vc.push(...rgb.map((x) => (Number.isFinite(x) ? Math.min(1, Math.max(0, x * k)) : 1)));
       }
     }
-    else if (tag === 'mtllib' && opts.resolve) readMTL(parts.slice(1).join(' '), opts.resolve, kd);
+    else if (tag === 'mtllib' && opts.resolve) { if (readMTL(parts.slice(1).join(' '), opts.resolve, kd)) b.textured = true; }
     else if (tag === 'vn') vn.push(+parts[1], +parts[2], +parts[3]);
     else if (tag === 'usemtl') { mat = b.material(parts.slice(1).join(' ') || 'default'); seen.clear(); }
     else if (tag === 'f') {
@@ -77,17 +77,22 @@ export function* parseOBJSteps(text: string, opts: ObjOptions = {}, slice = 4000
   return b.build();
 }
 
-/** the diffuse color of each material in a .mtl file; a library that cannot be read is skipped */
-function readMTL(uri: string, resolve: (uri: string) => Uint8Array, out: Map<string, [number, number, number]>) {
+/**
+ * The diffuse color of each material in a .mtl file; a library that cannot be read is skipped.
+ * Returns whether a material has a diffuse texture (`map_Kd`).
+ */
+function readMTL(uri: string, resolve: (uri: string) => Uint8Array, out: Map<string, [number, number, number]>): boolean {
   let text: string;
-  try { text = new TextDecoder().decode(resolve(uri)); } catch { return; }
-  let name = '';
+  try { text = new TextDecoder().decode(resolve(uri)); } catch { return false; }
+  let name = '', textured = false;
   for (const raw of text.split('\n')) {
     const parts = raw.trim().split(/\s+/);
     if (parts[0] === 'newmtl') name = parts.slice(1).join(' ');
+    else if (parts[0] === 'map_Kd') textured = true;
     else if (parts[0] === 'Kd' && name) {
       const rgb = [+parts[1], +parts[2], +parts[3]];
       if (rgb.every(Number.isFinite)) out.set(name, rgb.map((x) => Math.min(1, Math.max(0, x))) as [number, number, number]);
     }
   }
+  return textured;
 }

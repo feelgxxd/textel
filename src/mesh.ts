@@ -14,6 +14,8 @@ export interface Mesh {
   colors?: Float32Array | null;
   /** the file's own color of each material, rgb 0..1 in sRGB, or null where it has none */
   materialColors?: (readonly [number, number, number] | null)[];
+  /** some material takes its color from an image texture, which textel does not read yet */
+  textured?: boolean;
 }
 
 export const vertexCount = (m: Mesh) => m.positions.length / 3;
@@ -31,6 +33,8 @@ export class MeshBuilder {
   /** rgb per vertex, only once a vertex has a color (see vertexColor) */
   colors: number[] | null = null;
   materialColors: ([number, number, number] | null)[] = [];
+  /** see Mesh.textured */
+  textured = false;
   private matIndex = new Map<string, number>();
 
   material(name: string): number {
@@ -88,6 +92,7 @@ export class MeshBuilder {
       materials: this.materials,
       colors,
       materialColors: this.materialColors,
+      textured: this.textured,
     };
   }
 }

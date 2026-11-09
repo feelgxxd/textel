@@ -7,7 +7,7 @@ interface GltfJson {
   scenes?: { nodes?: number[] }[];
   nodes?: { children?: number[]; mesh?: number; matrix?: number[]; translation?: number[]; rotation?: number[]; scale?: number[] }[];
   meshes?: { primitives: { attributes: Record<string, number>; indices?: number; material?: number; mode?: number }[] }[];
-  materials?: { name?: string; pbrMetallicRoughness?: { baseColorFactor?: number[] } }[];
+  materials?: { name?: string; pbrMetallicRoughness?: { baseColorFactor?: number[]; baseColorTexture?: unknown } }[];
   accessors?: { bufferView?: number; byteOffset?: number; componentType: number; normalized?: boolean; count: number; type: string }[];
   bufferViews?: { buffer: number; byteOffset?: number; byteLength: number; byteStride?: number }[];
   buffers?: { uri?: string; byteLength: number }[];
@@ -109,6 +109,7 @@ export function parseGLTF(bytes: Uint8Array, opts: GltfOptions = {}): Mesh {
       const nor = prim.attributes.NORMAL !== undefined ? read(prim.attributes.NORMAL) : null;
       const mat = b.material(matName(prim.material)), base = baseColor(prim.material);
       b.materialColor(mat, [toSRGB(base[0]), toSRGB(base[1]), toSRGB(base[2])]);
+      if (prim.material !== undefined && json.materials?.[prim.material]?.pbrMetallicRoughness?.baseColorTexture) b.textured = true;
       const col = prim.attributes.COLOR_0 !== undefined ? read(prim.attributes.COLOR_0) : null;
       const first = b.positions.length / 3;
       for (let v = 0; v < pos.count; v++) {

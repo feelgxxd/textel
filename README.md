@@ -219,8 +219,8 @@ Charsets: `classic`, `hard`, `detailed`, `blocks`, `dots`, `minimal`, or any str
 
 `"color": "model"` (`--color model`, `color="model"`) draws the colors in the file: glTF base colors and
 vertex colors, OBJ vertex colors and the diffuse colors of its `.mtl` (in the playground, drop both files
-together). Darker glyphs get a darker shade of the same color, so the shading still reads. Textures are
-not read yet. The built-in examples have colors too: `textel --example donut --color model`.
+together). Darker glyphs get a darker shade of the same color, so the shading still reads. Image textures
+are not read yet; when a model keeps its colors in one, the CLI and the playground say so. The built-in examples have colors too: `textel --example donut --color model`.
 
 A model without normals of its own, such as an STL file, is shaded smooth except across folds sharper
 than `"creaseAngle"` (40° by default), so a low-poly ball looks round and a box keeps its corners.

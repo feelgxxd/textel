@@ -1,7 +1,7 @@
 import { toANSI, toText } from '../../output.ts';
 import { createRenderer } from '../../render.ts';
 import { live } from '../live.ts';
-import { colorDepth, fail, HELP_OPTIONS, INPUT_HELP, INPUT_OPTIONS, loadInput, num, parse, parseSize, STYLE_HELP, STYLE_OPTIONS, styleFrom } from '../shared.ts';
+import { colorDepth, fail, HELP_OPTIONS, INPUT_HELP, INPUT_OPTIONS, loadInput, missingTextures, num, parse, parseSize, STYLE_HELP, STYLE_OPTIONS, styleFrom, TEXTURE_NOTE } from '../shared.ts';
 
 export const summary = 'spin a model in the terminal (the default command)';
 
@@ -42,8 +42,10 @@ export function run(argv: string[]) {
   const style = styleFrom(o, input.style);
   const depth = colorDepth(o['no-color']);
   const tty = !!process.stdout.isTTY;
+  const untextured = missingTextures(input.mesh, style);
 
   if (o.once || !tty || !process.stdin.isTTY) {
+    if (untextured) process.stderr.write(TEXTURE_NOTE);
     const [w, h] = style.width && style.height ? [style.width, style.height] : tty ? [process.stdout.columns, Math.max(5, process.stdout.rows - 1)] : [80, 40];
     let r;
     try { r = createRenderer(input.mesh, { ...style, width: w, height: h }); } catch (e) { fail((e as Error).message); }
@@ -52,5 +54,6 @@ export function run(argv: string[]) {
     return;
   }
 
-  live({ mesh: input.mesh, name: input.name, style, fixedSize: parseSize(o.size), depth, fps: num(o.fps, '--fps') ?? 30 });
+  // the live view takes over the screen, so the note goes in its status line
+  live({ mesh: input.mesh, name: untextured ? `${input.name} · textures not read yet` : input.name, style, fixedSize: parseSize(o.size), depth, fps: num(o.fps, '--fps') ?? 30 });
 }

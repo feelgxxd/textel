@@ -5,7 +5,7 @@ import { recordLoop, stringifyFrames } from '../../frames.ts';
 import { recordingSVG } from '../../svg.ts';
 import { createRenderer } from '../../render.ts';
 import { mergeStyles } from '../../style.ts';
-import { fail, HELP_OPTIONS, INPUT_HELP, INPUT_OPTIONS, loadInput, num, parse, STYLE_HELP, STYLE_OPTIONS, styleFrom } from '../shared.ts';
+import { fail, HELP_OPTIONS, INPUT_HELP, INPUT_OPTIONS, loadInput, missingTextures, num, parse, STYLE_HELP, STYLE_OPTIONS, styleFrom, TEXTURE_NOTE } from '../shared.ts';
 
 export const summary = 'record a spinning loop into a .textel.json file or an animated .svg';
 
@@ -66,6 +66,7 @@ export function run(argv: string[]) {
 
   const flags = styleFrom(o, input.style);
   const style = mergeStyles({ width: 112, height: 56, aspect: 2 }, flags);
+  if (missingTextures(input.mesh, style)) process.stderr.write(TEXTURE_NOTE);
   let renderer;
   try { renderer = createRenderer(input.mesh, style); } catch (e) { fail((e as Error).message); }
 

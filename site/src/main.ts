@@ -101,6 +101,7 @@ const colorAt = (i: 0 | 1) => {
 };
 const setColor = (mode: string, from = colorAt(0), to = colorAt(1)) => {
   state.look.color = mode === 'gradient' ? [from, to] : mode === 'mono' ? to : mode === 'model' ? 'model' : undefined;
+  showStatus();
 };
 const light = () => anglesFromLight(state.look.light ?? [-0.3, 0.35, 0.88]);
 
@@ -355,7 +356,8 @@ function showStatus() {
   const mats = mesh.materials.length > 1 ? ` · ${mesh.materials.length} materials` : '';
   // past this the preview still works, but slower devices start to drop frames
   const heavy = tris > 500_000 ? ' · heavy model: it may stutter on slower devices, and embeds will be large' : '';
-  statusLine.textContent = `${modelFile} · ${tris.toLocaleString()} triangles${mats}${heavy}`;
+  const textures = mesh.textured && state.look.color === 'model' ? " · its colors come from image textures, which textel can't read yet" : '';
+  statusLine.textContent = `${modelFile} · ${tris.toLocaleString()} triangles${mats}${heavy}${textures}`;
 }
 
 function setMesh(m: Mesh, file: string) {

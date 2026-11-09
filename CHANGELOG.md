@@ -13,7 +13,8 @@ the API may still change between minor versions. The frames file format has its 
 - The model's own colors: `color: 'model'` (`--color model`, `color="model"`, "the model's own" in the
   playground). Reads glTF base colors and vertex colors (`COLOR_0`), OBJ vertex colors and `.mtl` diffuse
   colors; the viewer fetches an `.obj`'s `.mtl` next to it, and the CLI reads it from the same folder.
-  Textures are not read yet. The examples have colors of their own, and `sdfToMesh` takes a `color`
+  Textures are not read yet: when a model keeps its colors in one, the CLI and the playground say so
+  (`Mesh.textured`). The examples have colors of their own, and `sdfToMesh` takes a `color`
   function
 - `Mesh.colors` and `Mesh.materialColors`, `MeshBuilder.vertexColor()` and `materialColor()`, and
   `Frame.rgb`; `parseOBJ` takes `{ resolve }` for the material library

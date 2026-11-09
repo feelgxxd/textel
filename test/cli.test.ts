@@ -82,3 +82,12 @@ test('cli: every edge mode draws, and crease adds the folds', () => {
   const lines = (s: string) => [...s].filter((ch) => '/|\\'.includes(ch)).length;
   assert.ok(lines(crease.out) > lines(outline.out), 'more lines with the folds');
 });
+
+test('cli: a note when --color model meets colors kept in image textures', () => {
+  writeFileSync(join(dir, 'crate.mtl'), 'newmtl Wood\nKd 1 1 1\nmap_Kd wood.png\n');
+  writeFileSync(join(dir, 'crate.obj'), 'mtllib crate.mtl\nv 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl Wood\nf 1 2 3\n');
+  const own = textel('preview', 'crate.obj', '--once', '--size', '20x8', '--color', 'model');
+  assert.equal(own.code, 0, own.err);
+  assert.match(own.err, /image textures, which textel does not read yet/);
+  assert.doesNotMatch(textel('preview', 'crate.obj', '--once', '--size', '20x8').err, /textures/, 'no note without --color model');
+});

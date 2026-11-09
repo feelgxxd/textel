@@ -165,6 +165,10 @@ test('gltf: base colors and vertex colors, converted to sRGB', () => {
   assert.ok(Math.abs(m.materialColors![1]![0] - 0.4845) < 1e-3, 'linear 0.2 is sRGB 0.48');
   assert.deepEqual([...m.colors!.slice(0, 9)], [1, 0, 0, 0, 1, 0, 0, 0, 1]);
   assert.deepEqual([...m.colors!.slice(9, 18)], [1, 1, 1, 1, 1, 1, 1, 1, 1], 'no vertex colors: white, times the base color');
+  assert.equal(m.textured, false);
+  // a base color texture is not read, but the mesh says it has one
+  json.materials[1].pbrMetallicRoughness = { baseColorFactor: [1, 1, 1, 1], baseColorTexture: { index: 0 } } as never;
+  assert.equal(parseGLTF(new TextEncoder().encode(JSON.stringify(json))).textured, true);
 });
 
 test('obj: vertex colors, and diffuse colors from the material library', () => {
@@ -177,4 +181,7 @@ test('obj: vertex colors, and diffuse colors from the material library', () => {
   const bare = parseOBJ(obj, { resolve: () => { throw new Error('not found'); } });
   assert.deepEqual(bare.materialColors, [null, null]);
   assert.equal(parseOBJ(CUBE_OBJ).colors, null);
+  assert.equal(m.textured, false);
+  const textured = parseOBJ(obj, { resolve: () => new TextEncoder().encode('newmtl Paint\nKd 1 1 1\nmap_Kd paint.png\n') });
+  assert.equal(textured.textured, true, 'map_Kd marks the mesh as textured');
 });

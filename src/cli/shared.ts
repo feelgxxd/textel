@@ -132,6 +132,11 @@ export function loadInput(values: InputValues, positionals: string[]): Input | n
   }
 }
 
+/** true when `--color model` asks for colors this model keeps in image textures, which are not read yet */
+export const missingTextures = (mesh: Mesh, style: StyleInput) => !!mesh.textured && style.color === 'model';
+
+export const TEXTURE_NOTE = "textel: note: this model's colors come from image textures, which textel does not read yet; those parts are drawn in their plain material color\n";
+
 /** `--size WxH`, or null */
 export function parseSize(s: string | undefined): [number, number] | null {
   if (!s) return null;
