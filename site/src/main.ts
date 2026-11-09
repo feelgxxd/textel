@@ -156,7 +156,7 @@ panels.append(
     select('Color', [['none', 'none (page color)'], ['mono', 'one color'], ['gradient', 'gradient']], colorMode, (v) => { setColor(v); for (const s of syncs) s(); }),
     colorPicker('From (dark)', () => colorAt(0), (v) => setColor('gradient', v, colorAt(1))),
     colorPicker('To (bright)', () => colorAt(1), (v) => setColor(colorMode() === 'mono' ? 'mono' : 'gradient', colorAt(0), v)),
-    select('Outline', [['off', 'off'], ['outline', 'silhouette'], ['depth', 'silhouette and depth steps']],
+    select('Outline', [['off', 'off'], ['outline', 'silhouette'], ['depth', 'silhouette and depth steps'], ['crease', 'all of those and folds']],
       () => (state.look.edges ? String(state.look.edges) : 'off'),
       (v) => { state.look.edges = v === 'off' ? false : (v as EdgeMode); }),
     select('Shading', [['auto', 'auto'], ['smooth', 'smooth'], ['flat', 'flat (facets)']], () => state.look.shading ?? 'auto', (v) => { state.look.shading = v === 'auto' ? undefined : (v as 'flat' | 'smooth'); }),

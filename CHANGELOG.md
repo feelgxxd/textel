@@ -4,6 +4,18 @@ All notable changes to textel. Versions follow [semantic versioning](https://sem
 the API may still change between minor versions. The frames file format has its own version
 (see [docs/format.md](docs/format.md)).
 
+## Unreleased
+
+### Added
+- `edges: 'crease'` (`--edges crease`, `edges="crease"`, the playground's Outline list, and `e` in the
+  terminal preview): lines along folds of the surface as well, such as the edges of a cube or a gem's
+  facets, one cell wide. `creaseAngle` sets how sharp a fold must be (40° by default)
+
+### Fixed
+- `depth` edges no longer fill a face seen at a slant with lines: a step is now told from a face whose
+  depth only changes fast but evenly. The gem example and some looks change a little because of it
+- The gem example has a little ambient light, so its unlit facets show instead of leaving gaps
+
 ## 0.5.0 (2026-11-09)
 
 ### Added

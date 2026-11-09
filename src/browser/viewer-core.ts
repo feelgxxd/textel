@@ -85,7 +85,7 @@ export function styleFromAttributes(get: (name: string) => string | null): Recor
   const color = get('color');
   if (color) out.color = color.includes(',') ? color.split(',').map((s) => s.trim()) : color.trim();
   const edges = get('edges');
-  if (edges !== null) out.edges = edges === 'depth' ? 'depth' : edges === 'off' || edges === 'false' ? false : 'outline';
+  if (edges !== null) out.edges = edges === 'depth' || edges === 'crease' ? edges : edges === 'off' || edges === 'false' ? false : 'outline';
   for (const k of ['spin', 'pitch', 'zoom', 'distance', 'ambient'] as const) {
     const v = n(k);
     if (v !== undefined) out[k] = v;

@@ -51,7 +51,7 @@ export interface ResolvedColor {
   bg: RGB | null;
 }
 
-export type EdgeMode = false | 'outline' | 'depth';
+export type EdgeMode = false | 'outline' | 'depth' | 'crease';
 
 /** Everything about the look. Every field is optional; see DEFAULTS. This is what a preset file holds. */
 export interface StyleInput {
@@ -87,12 +87,17 @@ export interface StyleInput {
   supersample?: number;
   /** share of a cell's samples that must hit the model for the cell to be drawn */
   coverage?: number;
-  /** draw outlines with directional glyphs */
+  /**
+   * draw lines with directional glyphs: `outline` around the silhouette, `depth` also where one part is
+   * in front of another, `crease` also along folds of the surface (the edges of a cube or a gem's facets)
+   */
   edges?: EdgeMode | boolean;
   /** four glyphs: horizontal, rising, vertical, falling */
   edgeChars?: string;
-  /** depth jump (relative) that counts as an edge in `depth` mode */
+  /** depth jump (relative) that counts as an edge in `depth` and `crease` modes */
   edgeThreshold?: number;
+  /** in `crease` mode, the angle in degrees between neighboring surfaces that counts as a fold (default 40) */
+  creaseAngle?: number;
   color?: ColorInput;
   /**
    * how many distinct colors a gradient uses. Default: one per glyph of the ramp, so a color
@@ -121,6 +126,7 @@ export interface Style {
   edges: EdgeMode;
   edgeChars: string[];
   edgeThreshold: number;
+  creaseAngle: number;
   color: ResolvedColor;
   /** 0 = smooth; otherwise the number of gradient colors (default: the ramp length) */
   colorSteps: number;
@@ -143,6 +149,7 @@ export const DEFAULTS = {
   coverage: 0.5,
   edgeChars: '-/|\\',
   edgeThreshold: 0.03,
+  creaseAngle: 40,
 };
 
 /** Later inputs win; materials are merged by name. */
@@ -193,6 +200,7 @@ export function resolveStyle(input: StyleInput = {}): Style {
     edges: input.edges === true ? 'outline' : input.edges || false,
     edgeChars,
     edgeThreshold: num(input.edgeThreshold, DEFAULTS.edgeThreshold, 0),
+    creaseAngle: num(input.creaseAngle, DEFAULTS.creaseAngle, 1, 179),
     color: resolveColor(input.color),
     colorSteps: Math.round(num(input.colorSteps, -1, -1, 4096)),
     materials: input.materials ?? {},

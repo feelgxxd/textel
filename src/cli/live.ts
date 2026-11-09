@@ -13,7 +13,7 @@ export interface LiveOptions {
   fps: number;
 }
 
-const EDGE_MODES: EdgeMode[] = [false, 'outline', 'depth'];
+const EDGE_MODES: EdgeMode[] = [false, 'outline', 'depth', 'crease'];
 
 /** Full-screen live rendering in the terminal until q / Ctrl+C. */
 export function live(opts: LiveOptions) {

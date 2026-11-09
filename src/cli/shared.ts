@@ -7,7 +7,7 @@ import { parseModel } from '../loaders/index.ts';
 import type { Mesh } from '../mesh.ts';
 import type { ColorDepth } from '../output.ts';
 import { detectColorDepth } from '../terminal.ts';
-import { CHARSETS, mergeStyles, type StyleInput, type Vec3 } from '../style.ts';
+import { CHARSETS, mergeStyles, type EdgeMode, type StyleInput, type Vec3 } from '../style.ts';
 
 export function fail(msg: string): never {
   process.stderr.write(`textel: ${msg}\n`);
@@ -35,7 +35,7 @@ export function normalizeArgv(argv: string[]): string[] {
   const out: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], next = argv[i + 1];
-    if (a === '--edges' && !['outline', 'depth', 'off'].includes(next)) out.push('--edges=outline');
+    if (a === '--edges' && !['outline', 'depth', 'crease', 'off'].includes(next)) out.push('--edges=outline');
     else if (/^--?[a-z]/i.test(a) && !a.includes('=') && next !== undefined && /^-[\d.]/.test(next)) { out.push(`${a}=${next}`); i++; }
     else out.push(a);
   }
@@ -80,7 +80,8 @@ export const STYLE_HELP = `look
   -p, --preset <file.json>  style file; flags override it
       --color <#hex>        one color; --color #301000,#ffb000 for a gradient
       --no-color            plain characters
-      --edges [depth]       outline the silhouette; depth also marks depth steps; off
+      --edges [mode]        outline the silhouette; depth also marks depth steps;
+                            crease also folds of the surface; off
       --light <x,y,z>       direction toward the light (x right, y up, z toward you)
       --ambient <0..1>      brightness floor
       --shading <mode>      auto | flat | smooth
@@ -151,8 +152,8 @@ export function styleFrom(o: StyleValues, base: StyleInput): StyleInput {
   }
   if (o.color) flags.color = o.color.includes(',') ? o.color.split(',') : o.color;
   if (o.edges !== undefined) {
-    if (o.edges !== 'outline' && o.edges !== 'depth' && o.edges !== 'off') fail('--edges is outline, depth or off');
-    flags.edges = o.edges === 'off' ? false : o.edges;
+    if (!['outline', 'depth', 'crease', 'off'].includes(o.edges)) fail('--edges is outline, depth, crease or off');
+    flags.edges = o.edges === 'off' ? false : (o.edges as EdgeMode);
   }
   if (o.light) flags.light = nums(o.light, 3, '--light') as Vec3;
   if (o.shading) {

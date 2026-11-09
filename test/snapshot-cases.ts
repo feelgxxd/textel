@@ -21,6 +21,7 @@ const SIZE: StyleInput = { width: 64, height: 26, aspect: 2 };
 export const CASES: Case[] = [
   ...EXAMPLES.map((e) => ({ name: e.name, example: e.name, yaw: 0.6 })),
   { name: 'donut-edges-depth', example: 'donut', style: { edges: 'depth' }, yaw: 1.2 },
+  { name: 'gem-edges-crease', example: 'gem', style: { edges: 'crease' }, yaw: 1.4 },
   { name: 'dice-blocks', example: 'dice', style: { charset: 'blocks' }, yaw: 2.2 },
   { name: 'rocket-flat-ambient', example: 'rocket', style: { shading: 'flat', ambient: 0.2 }, yaw: 3.5 },
   { name: 'planet-wide-aspect', example: 'planet', style: { aspect: 1.5, supersample: 3 }, yaw: 0.3 },

@@ -40,7 +40,7 @@ look
   -c, --chars <ramp|name>   charset name or a custom ramp, darkest first
   -p, --preset <file.json>  style file; flags override it
       --color <#hex>        one color; --color #301000,#ffb000 for a gradient
-      --edges [depth]       outline the silhouette (and depth steps)
+      --edges [mode]        outline, depth (also depth steps) or crease (also folds)
       --light <x,y,z>       direction toward the light
 camera
       --pitch <rad>  --spin <rad/s>  --zoom <n>  --distance <n>
@@ -254,7 +254,10 @@ A small software rasterizer draws into a character grid. Each cell is sampled se
 (`supersample`); the cell takes the mean brightness of the samples that hit the model, and that
 picks a glyph from the ramp. The grid is corrected for character cells being taller than wide
 (`aspect`). Edge mode runs a Sobel filter over depth and draws `- / | \` along the outline, at the
-angles those glyphs actually have in a cell of that shape.
+angles those glyphs actually have in a cell of that shape. `depth` also marks where one part stands in
+front of another, telling a real step from a face that only slants away; `crease` also follows folds of
+the surface, where the normals on either side of a cell turn by more than `creaseAngle` (40° by default),
+and keeps those lines one cell wide.
 
 ## Roadmap
 

@@ -78,6 +78,8 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
   let sw = 0, sh = 0;
   let sOoz = new Float32Array(0), sLum = new Float32Array(0), sMat = new Int16Array(0);
   let cOoz = new Float32Array(0), cLum = new Float32Array(0), cMat = new Int16Array(0);
+  // surface normals per sample and per cell (xyz), only kept for crease lines
+  let sN = new Float32Array(0), cN = new Float32Array(0);
 
   function configure() {
     materials = mesh.materials.map((name) => resolveMaterial(name, style.materials[name]));
@@ -88,6 +90,9 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
     }
     const n = style.width * style.height;
     if (cOoz.length !== n) { cOoz = new Float32Array(n); cLum = new Float32Array(n); cMat = new Int16Array(n); }
+    const creases = style.edges === 'crease';
+    if (sN.length !== (creases ? sw * sh * 3 : 0)) sN = new Float32Array(creases ? sw * sh * 3 : 0);
+    if (cN.length !== (creases ? n * 3 : 0)) cN = new Float32Array(creases ? n * 3 : 0);
   }
   configure();
 
@@ -162,7 +167,7 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
       let fnx = e1y * e2z - e1z * e2y, fny = e1z * e2x - e1x * e2z, fnz = e1x * e2y - e1y * e2x;
       const gx = (VP[pa] + VP[pb] + VP[pc]) / 3, gy = (VP[pa + 1] + VP[pb + 1] + VP[pc + 1]) / 3, gz = (VP[pa + 2] + VP[pb + 2] + VP[pc + 2]) / 3;
       const vx = -gx, vy = -gy, vz = D - gz;
-      let flip = 1, flatLum = 0;
+      let flip = 1, flatLum = 0, fx = 0, fy = 0, fz = 0;
       if (VN) {
         // trust the vertex normals for "outside"; flip them when we see the inside of a face
         const nsx = VN[pa] + VN[pb] + VN[pc], nsy = VN[pa + 1] + VN[pb + 1] + VN[pc + 1], nsz = VN[pa + 2] + VN[pb + 2] + VN[pc + 2];
@@ -171,10 +176,11 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
       } else {
         if (fnx * vx + fny * vy + fnz * vz < 0) { fnx = -fnx; fny = -fny; fnz = -fnz; }
         const l = Math.hypot(fnx, fny, fnz) || 1;
-        flatLum = amb + dif * Math.max(0, (fnx * lx + fny * ly + fnz * lz) / l);
+        fx = fnx / l; fy = fny / l; fz = fnz / l;
+        flatLum = amb + dif * Math.max(0, fx * lx + fy * ly + fz * lz);
       }
 
-      const inv = 1 / area, mat = TM[t], oa = OZ[ia], ob = OZ[ib], oc = OZ[ic];
+      const inv = 1 / area, mat = TM[t], oa = OZ[ia], ob = OZ[ib], oc = OZ[ic], keepN = sN.length > 0;
       for (let y = y0; y <= y1; y++) {
         const py = y + 0.5;
         for (let x = x0; x <= x1; x++) {
@@ -193,8 +199,11 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
             const nz = (w0 * VN[pa + 2] + w1 * VN[pb + 2] + w2 * VN[pc + 2]) * flip;
             const l = Math.hypot(nx, ny, nz) || 1;
             sLum[i] = amb + dif * Math.max(0, (nx * lx + ny * ly + nz * lz) / l);
+            if (keepN) { sN[i * 3] = nx / l; sN[i * 3 + 1] = ny / l; sN[i * 3 + 2] = nz / l; }
           } else {
             sLum[i] = flatLum;
+            // flat shading: the face's own normal, toward the camera
+            if (keepN) { sN[i * 3] = fx; sN[i * 3 + 1] = fy; sN[i * 3 + 2] = fz; }
           }
         }
       }
@@ -204,19 +213,25 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
     const n = ss * ss, need = Math.max(1, Math.ceil(style.coverage * n - 1e-9));
     const votes = new Int16Array(n);
     for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
-      let hit = 0, lum = 0, ooz = 0;
+      let hit = 0, lum = 0, ooz = 0, nx = 0, ny = 0, nz = 0;
+      const keepN = cN.length > 0;
       for (let sy2 = 0; sy2 < ss; sy2++) for (let sx2 = 0; sx2 < ss; sx2++) {
         const i = (r * ss + sy2) * sw + c * ss + sx2;
         if (sMat[i] === BG) continue;
         votes[hit++] = sMat[i];
         lum += sLum[i];
         if (sOoz[i] > ooz) ooz = sOoz[i];
+        if (keepN) { nx += sN[i * 3]; ny += sN[i * 3 + 1]; nz += sN[i * 3 + 2]; }
       }
       const ci = r * W + c;
       if (hit < need) { cMat[ci] = BG; cLum[ci] = 0; cOoz[ci] = 0; continue; }
       cMat[ci] = hit === 1 ? votes[0] : majority(votes, hit);
       cLum[ci] = lum / hit;
       cOoz[ci] = ooz;
+      if (keepN) {
+        const l = Math.hypot(nx, ny, nz) || 1;
+        cN[ci * 3] = nx / l; cN[ci * 3 + 1] = ny / l; cN[ci * 3 + 2] = nz / l;
+      }
     }
 
     // ---- glyphs ----
@@ -235,7 +250,8 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
   }
 
   function drawEdges(chars: string[], W: number, H: number) {
-    const depth = style.edges === 'depth', th = style.edgeThreshold, aspect = style.aspect;
+    const crease = style.edges === 'crease', depth = style.edges === 'depth' || crease, th = style.edgeThreshold, aspect = style.aspect;
+    const cosFold = Math.cos((style.creaseAngle * Math.PI) / 180);
     const solid = (c: number, r: number) => c >= 0 && r >= 0 && c < W && r < H && cMat[r * W + c] !== BG;
     const F = (c: number, r: number) => (solid(c, r) ? cOoz[r * W + c] : 0);
     // the angles '/' and '\' actually sit at in a cell this tall
@@ -244,17 +260,30 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
     for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
       const i = r * W + c;
       if (cMat[i] === BG || materials[cMat[i]].carved) continue;
-      let edge = false;
+      let edge = false, fold = false;
       for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         if (!solid(c + dc, r + dr)) { edge = true; break; }
-        // only the nearer side of a depth step gets the line
-        if (depth && cOoz[i] - F(c + dc, r + dr) > th * cOoz[i]) { edge = true; break; }
+        if (!depth) continue;
+        // A step, not a slope: inverse depth runs straight across a flat face, so the neighbor is
+        // predicted from the cell on the other side. Only the nearer side of a step gets the line.
+        const expect = solid(c - dc, r - dr) ? 2 * cOoz[i] - cOoz[(r - dr) * W + c - dc] : cOoz[i];
+        if (expect - F(c + dc, r + dr) > th * cOoz[i]) { edge = true; break; }
       }
-      if (!edge) continue;
-      // Sobel on inverse depth (background = 0); screen y points down
-      const gx = F(c + 1, r - 1) + 2 * F(c + 1, r) + F(c + 1, r + 1) - F(c - 1, r - 1) - 2 * F(c - 1, r) - F(c - 1, r + 1);
-      const gyDown = F(c - 1, r + 1) + 2 * F(c, r + 1) + F(c + 1, r + 1) - F(c - 1, r - 1) - 2 * F(c, r - 1) - F(c + 1, r - 1);
-      const gy = -gyDown / aspect;
+      if (!edge && crease) {
+        // a fold where the surface turns sharply, kept only where it turns most, so lines stay one cell wide
+        const [s, ax] = bend(c, r, W, H), [dc, dr] = ax ? [0, 1] : [1, 0];
+        fold = s > 1 - cosFold && s >= bend(c - dc, r - dr, W, H)[0] && s > bend(c + dc, r + dr, W, H)[0];
+      }
+      if (!edge && !fold) continue;
+      let gx = 0, gy = 0;
+      if (edge) {
+        // Sobel on inverse depth (background = 0); screen y points down
+        gx = F(c + 1, r - 1) + 2 * F(c + 1, r) + F(c + 1, r + 1) - F(c - 1, r - 1) - 2 * F(c - 1, r) - F(c - 1, r + 1);
+        const gyDown = F(c - 1, r + 1) + 2 * F(c, r + 1) + F(c + 1, r + 1) - F(c - 1, r - 1) - 2 * F(c, r - 1) - F(c + 1, r - 1);
+        gy = -gyDown / aspect;
+      } else {
+        [gx, gy] = foldGradient(c, r, W, H, aspect);
+      }
       if (gx === 0 && gy === 0) continue;
       // the line runs perpendicular to the gradient
       let a = Math.atan2(gx, -gy);
@@ -262,6 +291,43 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
       if (a >= Math.PI) a -= Math.PI;
       chars[i] = a < b1 || a >= b4 ? hz : a < b2 ? rise : a < b3 ? vert : fall;
     }
+  }
+
+  /**
+   * How sharply the surface turns at a cell: 1 − cos of the angle between the normals on either side,
+   * across the row (axis 0) or the column (axis 1), whichever is larger. Off-model cells count as flat.
+   */
+  function bend(c: number, r: number, W: number, H: number): [number, number] {
+    if (c < 0 || r < 0 || c >= W || r >= H || cMat[r * W + c] === BG) return [0, 0];
+    const i = r * W + c;
+    const at = (cc: number, rr: number) => {
+      const j = rr * W + cc;
+      return cc < 0 || rr < 0 || cc >= W || rr >= H || cMat[j] === BG || materials[cMat[j]].carved ? i : j;
+    };
+    const turn = (a: number, b: number) => 1 - (cN[a * 3] * cN[b * 3] + cN[a * 3 + 1] * cN[b * 3 + 1] + cN[a * 3 + 2] * cN[b * 3 + 2]);
+    const across = turn(at(c - 1, r), at(c + 1, r)), down = turn(at(c, r - 1), at(c, r + 1));
+    return across >= down ? [across, 0] : [down, 1];
+  }
+
+  /**
+   * Which way the surface turns across a fold: Sobel on each normal component, combined as a structure
+   * tensor, whose main axis points across the fold. Returned as a gradient (x right, y up).
+   */
+  function foldGradient(c: number, r: number, W: number, H: number, aspect: number): [number, number] {
+    const i = r * W + c;
+    let jxx = 0, jxy = 0, jyy = 0;
+    for (let k = 0; k < 3; k++) {
+      // cells off the model read as this cell, so the silhouette does not count as a turn
+      const n = (dc: number, dr: number) => {
+        const cc = c + dc, rr = r + dr;
+        return cc < 0 || rr < 0 || cc >= W || rr >= H || cMat[rr * W + cc] === BG ? cN[i * 3 + k] : cN[(rr * W + cc) * 3 + k];
+      };
+      const gx = n(1, -1) + 2 * n(1, 0) + n(1, 1) - n(-1, -1) - 2 * n(-1, 0) - n(-1, 1);
+      const gy = -(n(-1, 1) + 2 * n(0, 1) + n(1, 1) - n(-1, -1) - 2 * n(0, -1) - n(1, -1)) / aspect;
+      jxx += gx * gx; jxy += gx * gy; jyy += gy * gy;
+    }
+    const t = 0.5 * Math.atan2(2 * jxy, jxx - jyy);
+    return [Math.cos(t), Math.sin(t)];
   }
 
   return {

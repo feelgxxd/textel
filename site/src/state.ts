@@ -124,7 +124,7 @@ function lookAttributes(look: StyleInput): string {
     const c = Array.isArray(look.color) ? look.color.join(',') : typeof look.color === 'string' ? look.color : null;
     if (c) out.push(`color="${attr(c)}"`);
   }
-  if (look.edges) out.push(look.edges === 'depth' ? 'edges="depth"' : 'edges');
+  if (look.edges) out.push(look.edges === 'outline' || look.edges === true ? 'edges' : `edges="${look.edges}"`);
   for (const k of ['pitch', 'spin', 'zoom', 'distance', 'ambient'] as const) {
     if (look[k] !== undefined) out.push(`${k}="${look[k]}"`);
   }
@@ -157,7 +157,7 @@ export function cliCommand(s: State, kind: 'preview' | 'render', file: string): 
     const c = Array.isArray(look.color) ? look.color.join(',') : typeof look.color === 'string' ? look.color : null;
     if (c) parts.push('--color', shellQuote(c));
   }
-  if (look.edges) parts.push('--edges', look.edges === 'depth' ? 'depth' : 'outline');
+  if (look.edges) parts.push('--edges', look.edges === true ? 'outline' : look.edges);
   for (const k of ['pitch', 'spin', 'zoom', 'distance', 'ambient'] as const) {
     if (look[k] !== undefined) parts.push(`--${k}`, String(look[k]));
   }

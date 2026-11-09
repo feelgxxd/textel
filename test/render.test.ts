@@ -95,3 +95,34 @@ test('gradients use one color per glyph level by default, fewer color changes to
     seen.set(f.chars[i], rgb);
   }
 });
+
+const CUBE = 'v -1 -1 -1\nv 1 -1 -1\nv 1 1 -1\nv -1 1 -1\nv -1 -1 1\nv 1 -1 1\nv 1 1 1\nv -1 1 1\nf 1 2 3 4\nf 5 8 7 6\nf 1 5 6 2\nf 4 3 7 8\nf 1 4 8 5\nf 2 6 7 3\n';
+const EDGE_GLYPHS = /[-/|\\]/;
+
+test('edges: a flat face seen at a slant is not a depth step', () => {
+  // A cube is convex: nothing on it stands in front of anything else, so depth lines are the outline,
+  // and the top face seen from just above, whose depth changes fast but evenly, stays shaded. (Where a
+  // face meets one seen almost edge on, a few cells of the bend may read as a step; that is fine.)
+  const look = { width: 60, height: 30, aspect: 2, charset: 'hard', pitch: 0.45 } as const;
+  const lines = (s: string) => [...s].filter((ch) => EDGE_GLYPHS.test(ch)).length;
+  for (const yaw of [0.2, 0.6, 1.1]) {
+    const depth = lines(toText(createRenderer(parseOBJ(CUBE), { ...look, edges: 'depth' }).render({ yaw })));
+    const outline = lines(toText(createRenderer(parseOBJ(CUBE), { ...look, edges: 'outline' }).render({ yaw })));
+    // before steps were told from slopes, the top face filled with lines: about 200 cells more
+    assert.ok(depth - outline <= 25, `yaw ${yaw}: ${depth - outline} cells more than the outline`);
+  }
+});
+
+test('edges: crease draws the folds of a cube one cell wide, and none on a sphere', () => {
+  // a corner of the cube faces the camera: the vertical fold runs down the middle
+  const r = createRenderer(parseOBJ(CUBE), { width: 60, height: 30, aspect: 2, charset: 'hard', edges: 'crease', pitch: 0.3 });
+  const rows = toText(r.render({ yaw: Math.PI / 4 })).split('\n');
+  const mid = rows.slice(14, 22);
+  for (const row of mid) {
+    const bars = [...row.matchAll(/\|/g)].map((m) => m.index!).filter((x) => x > 20 && x < 40);
+    assert.equal(bars.length, 1, `one fold line in the middle: "${row}"`);
+  }
+  const plain = createRenderer(sphere, { width: 60, height: 30, aspect: 2, charset: 'hard', edges: 'outline' });
+  const folded = createRenderer(sphere, { width: 60, height: 30, aspect: 2, charset: 'hard', edges: 'crease' });
+  assert.equal(toText(folded.render({ yaw: 0.4 })), toText(plain.render({ yaw: 0.4 })), 'a smooth sphere has no folds');
+});

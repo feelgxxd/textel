@@ -175,7 +175,7 @@ export const EXAMPLES: Example[] = [
   { name: 'rocket', title: 'ROCKET', description: 'thin fins and a porthole', style: soft(0.15), build: rocket },
   { name: 'planet', title: 'PLANET', description: 'a globe with a tilted ring', style: soft(0.25), build: planet },
   { name: 'mug', title: 'MUG', description: 'a hollow cup with a handle', style: soft(0.5), build: mug },
-  { name: 'gem', title: 'GEM', description: 'flat facets, good with --shading flat', style: { ...hard(0.35), edges: 'depth' }, build: gem },
+  { name: 'gem', title: 'GEM', description: 'flat facets, good with --shading flat', style: { ...hard(0.35), edges: 'depth', ambient: 0.12 }, build: gem },
 ];
 
 export function findExample(name: string): Example | undefined {

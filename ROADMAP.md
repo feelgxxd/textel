@@ -28,7 +28,7 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | | |
 |---|---|
 | Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 88 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 10 golden-frame snapshots) |
+| Tests | 92 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
@@ -204,7 +204,8 @@ Effort: **two sessions**.
 Effort: **three to four sessions**, spread over the milestones above where possible.
 
 ### Quality
-- [ ] Crease edges from normal discontinuities, not only silhouettes and depth steps
+- [x] Crease edges from normal discontinuities, not only silhouettes and depth steps (`edges: 'crease'`);
+  depth edges now tell a real step from a face that only slants away
 - [ ] Steadier glyphs while spinning: hysteresis on edge glyphs and ramp steps
 - [ ] Model colors: vertex colors and material base color as a color mode
 - [ ] Smooth shading for models without normals, with a crease angle so hard edges stay hard
@@ -292,6 +293,6 @@ Made:
 
 ## Next session starts with
 
-1. 1.0: choose the order: quality first (crease edges, steadier glyphs while spinning, model colors) or
-   the API review that freezes names and options
+1. 1.0 quality, continued: steadier glyphs while spinning, model colors, smooth shading without normals;
+   then the API review that freezes names and options
 2. Docs on the playground site

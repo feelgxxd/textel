@@ -69,4 +69,14 @@ test('cli: clear errors', () => {
   assert.match(textel('render', '--example', 'donut', '--frames', '0').err, /--frames is a whole number/);
   assert.match(textel('--example', 'donut', '--size', 'big').err, /--size looks like/);
   assert.match(textel('help', 'nope').err, /no command "nope"/);
+  assert.match(textel('--example', 'gem', '--once', '--edges=sharp').err, /--edges is outline, depth, crease or off/);
+});
+
+test('cli: every edge mode draws, and crease adds the folds', () => {
+  const draw = (...a: string[]) => textel('--example', 'gem', '--once', '--size', '50x20', '--yaw', '1.4', ...a);
+  const outline = draw('--edges'), crease = draw('--edges', 'crease');
+  assert.equal(crease.code, 0, crease.err);
+  assert.match(outline.out, /[-/|\\]/);
+  const lines = (s: string) => [...s].filter((ch) => '/|\\'.includes(ch)).length;
+  assert.ok(lines(crease.out) > lines(outline.out), 'more lines with the folds');
 });
