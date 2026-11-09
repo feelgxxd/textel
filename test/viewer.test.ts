@@ -176,6 +176,21 @@ test('viewer dom: two fingers pinch to zoom when zoomable', async () => {
   }
 });
 
+test('viewer dom: view tells the camera as drawn, enough to draw it again', async () => {
+  const el = mount({ paused: '', cols: '40', zoom: '1.5', pitch: '0.2' }) as Viewer & { view: { yaw: number; pitch: number; zoom: number; fitPitch: number } };
+  el.mesh = buildExample(EXAMPLES.find((e) => e.name === 'gem')!);
+  el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+  el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+  const v = el.view;
+  assert.ok(Math.abs(v.yaw - 0.3) < 1e-9, `two steps right: ${v.yaw}`);
+  assert.equal(v.pitch, 0.2);
+  assert.equal(v.zoom, 1.5);
+  assert.equal(v.fitPitch, 1.2);
+  el.setAttribute('nodrag', '');
+  assert.equal(el.view.fitPitch, 0, 'a fixed viewer fits its one pitch');
+  el.remove();
+});
+
 test('viewer dom: errors are events, not exceptions', async () => {
   const el = mount();
   const failed = once(el, 'error');

@@ -143,6 +143,15 @@ export class TextelViewer extends Base {
     this.#kick();
   }
 
+  /**
+   * The camera as it is drawn right now. The same picture at any size:
+   * `createRenderer(mesh, { ...look, zoom, fitPitch, width, height }).render({ yaw, pitch })`.
+   */
+  get view(): { yaw: number; pitch: number; zoom: number; fitPitch: number } {
+    const s = this.#style(), zoom = (s.zoom ?? 1) * this.#zoom, fitPitch = this.hasAttribute('nodrag') ? 0 : MAX_PITCH;
+    return { yaw: this.#motion.yaw, pitch: this.#motion.pitch, zoom, fitPitch };
+  }
+
   get paused(): boolean { return !this.#playing; }
   play() { this.#playing = true; this.#kick(); }
   /** stops at once: the spin and any flick still coasting are dropped */
@@ -191,15 +200,15 @@ export class TextelViewer extends Base {
   #restyle() {
     if (!this.#renderer || !this.#grid) return this.#layout();
     const s = this.#style();
-    this.#renderer.setStyle({ ...s, ...this.#gridStyle(s) });
+    this.#renderer.setStyle({ ...s, ...this.#gridStyle() });
     // show the change now, even while paused
     this.#draw();
     this.#kick();
   }
 
-  #gridStyle(s: StyleInput): StyleInput {
-    const g = this.#grid!;
-    return { width: g.cols, height: g.rows, aspect: g.aspect, zoom: (s.zoom ?? 1) * this.#zoom, fitPitch: this.hasAttribute('nodrag') ? 0 : MAX_PITCH };
+  #gridStyle(): StyleInput {
+    const g = this.#grid!, { zoom, fitPitch } = this.view;
+    return { width: g.cols, height: g.rows, aspect: g.aspect, zoom, fitPitch };
   }
 
   #layout() {
@@ -214,8 +223,8 @@ export class TextelViewer extends Base {
     if (!this.#mesh) return;
     const s = this.#style();
     try {
-      if (!this.#renderer) this.#renderer = createRenderer(this.#mesh, { ...s, ...this.#gridStyle(s) });
-      else this.#renderer.setStyle({ ...s, ...this.#gridStyle(s) });
+      if (!this.#renderer) this.#renderer = createRenderer(this.#mesh, { ...s, ...this.#gridStyle() });
+      else this.#renderer.setStyle({ ...s, ...this.#gridStyle() });
     } catch (error) {
       this.dispatchEvent(new CustomEvent('error', { detail: { error } }));
       return;

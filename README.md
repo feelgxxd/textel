@@ -95,7 +95,7 @@ textel render logo.glb --aspect 1.5 -o logo.textel.json
 ```
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.4/dist/textel-player.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.5/dist/textel-player.js"></script>
 <textel-player src="logo.textel.json"></textel-player>
 ```
 
@@ -121,7 +121,7 @@ or `::part(screen)`. From JavaScript: `player.play()`, `player.pause()`, `player
 ### `<textel-viewer>`
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.4/dist/textel-viewer.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@0.5/dist/textel-viewer.js"></script>
 <textel-viewer src="model.glb" charset="hard" color="#301000,#ffb000" edges></textel-viewer>
 ```
 
@@ -174,6 +174,21 @@ motion. The playground makes one from its **Image** tab, and the library from an
 For chats and social posts, the playground's **Image** tab also makes a GIF (640×640, about 600 KB) and
 an MP4 video (1280×1280, about 1.4 MB), both one turn in 4 seconds in the page colors. They are made in
 your browser; the video needs a browser that can encode H.264 (current Chrome, Edge and Safari).
+The same tab saves a PNG of the preview at the angle it shows.
+
+### One HTML file
+
+The **Recorded loop** tab also makes a single HTML file with the player and the frames inside (about
+450 KB). It opens anywhere, from a disk, an email or a USB stick, with no internet.
+
+### From JavaScript
+
+`viewer.view` tells the camera as the viewer draws it, so the same picture can be rendered at any size:
+
+```ts
+const { yaw, pitch, zoom, fitPitch } = viewer.view;
+const frame = createRenderer(mesh, { ...look, zoom, fitPitch, width: 160, height: 80 }).render({ yaw, pitch });
+```
 
 ## Presets
 

@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  anglesFromLight, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles, needsPreset, presetJSON, PRESETS, VERSION, type State,
+  anglesFromLight, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles, needsPreset, presetJSON, PRESETS, standaloneHTML, VERSION, type State,
 } from '../site/src/state.ts';
 
 const state = (look: State['look'], extra: Partial<State> = {}): State => ({ ...DEFAULT_STATE, look, ...extra });
@@ -79,4 +79,19 @@ test('site: snippets load the released version, and the README agrees', async ()
   assert.equal(VERSION, pkg.version.split('.').slice(0, 2).join('.'), 'VERSION in site/src/state.ts follows package.json');
   const readme = readFileSync(new URL('README.md', root), 'utf8');
   for (const [, v] of readme.matchAll(/@feelgxxd\/textel@([\d.]+)\//g)) assert.equal(v, VERSION, 'CDN links in the README');
+});
+
+test('site: a single-file page carries the player and the frames, and nothing closes its script early', () => {
+  const frames = JSON.stringify({ textel: 1, meta: { title: 'a </script><b>' }, data: 'AAAA' });
+  const player = 'customElements.define("textel-player",class extends HTMLElement{});const s="</script>";';
+  const html = standaloneHTML(frames, player, { title: 'logo & co', page: { fg: '#e8e8e8', bg: '#111214' }, ratio: 1.25 });
+  assert.match(html, /^<!doctype html>/);
+  assert.match(html, /<title>logo &amp; co<\/title>/);
+  assert.match(html, /background:#111214;color:#e8e8e8/);
+  assert.match(html, /width:min\(94vw,1\.25\*94vh\)/);
+  const script = html.slice(html.indexOf('<script type="module">') + 22, html.lastIndexOf('</script>'));
+  assert.doesNotMatch(script, /<\/script/i, 'the only closing tag is the real one');
+  // the escaped data still reads back as the same frames
+  const literal = script.slice(script.indexOf('.recording = ') + 13, script.lastIndexOf(';'));
+  assert.deepEqual(JSON.parse(literal.replace(/<\\\//g, '</')), JSON.parse(frames));
 });

@@ -2,7 +2,7 @@
 // share links, embed snippets, CLI commands. Tested in test/site.test.ts.
 import { CHARSETS, type StyleInput, type Vec3 } from '../../src/style.ts';
 
-export const VERSION = '0.4';
+export const VERSION = '0.5';
 export const CDN = `https://cdn.jsdelivr.net/npm/@feelgxxd/textel@${VERSION}/dist`;
 
 /** colors of the box around the picture, used by the preview and by the embed snippets */
@@ -166,3 +166,30 @@ export function cliCommand(s: State, kind: 'preview' | 'render', file: string): 
 }
 
 export const CHARSET_NAMES = Object.keys(CHARSETS);
+
+/**
+ * One HTML file that plays a recorded loop with nothing else: the player and the frames are inside it,
+ * so it opens from a disk, an email or a USB stick, offline. `ratio` is the loop's width over height.
+ */
+export function standaloneHTML(frames: string, player: string, opts: { title: string; page: Page; ratio: number }): string {
+  // nothing inside may close the script early
+  const safe = (js: string) => js.replace(/<\/(script)/gi, '<\\/$1').replace(/<!--/g, '<\\!--');
+  const text = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const r = Math.round(opts.ratio * 1000) / 1000;
+  return `<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${text(opts.title)}</title>
+<style>
+html,body{margin:0;height:100%;background:${opts.page.bg};color:${opts.page.fg}}
+body{display:grid;place-items:center}
+textel-player{width:min(94vw,${r}*94vh)}
+</style>
+<textel-player label="${attr(opts.title)}"></textel-player>
+<script type="module">
+${safe(player)}
+document.querySelector('textel-player').recording = ${safe(frames)};
+</script>
+`;
+}

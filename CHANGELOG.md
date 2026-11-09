@@ -4,7 +4,7 @@ All notable changes to textel. Versions follow [semantic versioning](https://sem
 the API may still change between minor versions. The frames file format has its own version
 (see [docs/format.md](docs/format.md)).
 
-## Unreleased
+## 0.5.0 (2026-11-09)
 
 ### Added
 - Animated SVG: `textel render <model> -o out.svg`, `recordingSVG()` in the library, and an **Image** tab in
@@ -13,6 +13,9 @@ the API may still change between minor versions. The frames file format has its 
 - GIF and MP4 from the playground's **Image** tab, made in the browser with no extra packages: a small
   GIF encoder that stores only what changes between frames, and an MP4 writer around the browser's own
   H.264 encoder
+- A PNG of the preview at the angle it shows, from the **Image** tab
+- A single HTML file with the player and the frames inside, from the **Recorded loop** tab; opens offline
+- `viewer.view`: the viewer's camera as drawn (yaw, pitch, zoom, fitPitch), to render the same picture again
 
 ## 0.4.0 (2026-11-09)
 

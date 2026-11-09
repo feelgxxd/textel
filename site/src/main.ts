@@ -4,6 +4,7 @@ import '../../src/browser/viewer.ts';
 import type { TextelViewer } from '../../src/browser/viewer.ts';
 import { EXAMPLES } from '../../src/examples.ts';
 import { RecordingBuilder, recordingSVG, stringifyFrames } from '../../src/frames.ts';
+import playerSource from 'virtual:textel-player';
 import { encodeGIF } from './gif.ts';
 import { indexed, inkPalette, rasterize } from './raster.ts';
 import { canEncodeVideo, encodeMP4 } from './video.ts';
@@ -13,7 +14,7 @@ import { createRenderer } from '../../src/render.ts';
 import { mergeStyles, type EdgeMode, type MaterialInput } from '../../src/style.ts';
 import {
   anglesFromLight, CHARSET_NAMES, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles,
-  needsPreset, presetJSON, PRESETS, type State,
+  needsPreset, presetJSON, PRESETS, standaloneHTML, type State,
 } from './state.ts';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -209,10 +210,15 @@ function renderExports() {
     body.push(codeBlock(embedSnippet(state, 'viewer', modelFile)));
     if (needsPreset(state.look)) body.push(h('p', { class: 'note' }, 'This look uses settings only a preset file carries; save it next to the page too.'), presetButton());
   } else if (tab === 'Recorded loop') {
-    const rec = h('button', { type: 'button', class: 'primary', disabled: !mesh || recording }, recording ? 'Recording…' : `Record ${base}.textel.json`);
+    const rec = h('button', { type: 'button', class: 'primary', disabled: !mesh || recording }, `Record ${base}.textel.json`);
     rec.addEventListener('click', () => recordLoop(rec, base, 'json'));
+    const page = h('button', { type: 'button', disabled: !mesh || recording }, `Make ${base}.html`);
+    page.addEventListener('click', () => recordLoop(page, base, 'html'));
     body.push(h('p', { class: 'note' }, 'One full turn rendered once and saved as a file. The player is about 3 KB and needs no 3D code.'), rec);
     body.push(codeBlock(embedSnippet(state, 'player', `${base}.textel.json`)));
+    body.push(h('p', { class: 'note' }, 'Or everything in one HTML file, player included: it opens anywhere, offline too.'), page);
+    if (recording) body.push(h('p', { class: 'note' }, progressText));
+    else if (made) body.push(h('p', { class: 'note' }, made));
   } else if (tab === 'Image') {
     const make = (kind: 'svg' | 'gif' | 'mp4', primary = false) => {
       const b = h('button', { type: 'button', class: primary ? 'primary' : '', disabled: !mesh || recording }, `Make ${base}.${kind}`);
@@ -227,6 +233,8 @@ function renderExports() {
       codeBlock(`![${base}](${base}.svg)`),
       h('p', { class: 'note' }, 'A GIF or a video for chats and social posts, in the page colors. The video is twice as sharp; the GIF plays everywhere.'),
       h('div', { class: 'row' }, make('gif'), ...(canEncodeVideo() ? [make('mp4')] : [])),
+      h('p', { class: 'note' }, 'A still picture of the preview as it is now: turn it to the angle you like first.'),
+      h('div', { class: 'row' }, snapshotButton(base)),
     );
     if (recording) body.push(h('p', { class: 'note' }, progressText));
     else if (made) body.push(h('p', { class: 'note' }, made));
@@ -248,7 +256,7 @@ function renderExports() {
   );
 }
 
-async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' | 'svg' | 'gif' | 'mp4') {
+async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' | 'html' | 'svg' | 'gif' | 'mp4') {
   if (!mesh) return;
   recording = true;
   made = '';
@@ -261,7 +269,7 @@ async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' 
   try {
     // a recorded loop plays back from data; the images store every frame whole, so fewer frames and
     // cells keep them light. All of them take 4 s for a turn
-    const [width, height, frames, fps] = kind === 'json' ? [112, 56, 120, 30] : [80, 40, 80, 20];
+    const [width, height, frames, fps] = kind === 'json' || kind === 'html' ? [112, 56, 120, 30] : [80, 40, 80, 20];
     const r = createRenderer(mesh, mergeStyles(state.look, { width, height, aspect: 2 }));
     const b = new RecordingBuilder();
     for (let i = 0; i < frames; i++) {
@@ -271,6 +279,7 @@ async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' 
     const rec = b.build(fps, { title: base, generator: 'textel playground' });
     let file: BlobPart, type: string;
     if (kind === 'json') [file, type] = [stringifyFrames(rec), 'application/json'];
+    else if (kind === 'html') [file, type] = [standaloneHTML(stringifyFrames(rec), playerSource, { title: base, page: state.page, ratio: rec.width / (rec.height * rec.aspect) }), 'text/html'];
     else if (kind === 'svg') [file, type] = [recordingSVG(rec, { title: base, ...(svgPageColors ? { color: state.page.fg, background: state.page.bg } : {}) }), 'image/svg+xml'];
     else {
       const look = { color: state.page.fg, background: state.page.bg };
@@ -296,6 +305,32 @@ async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' 
     recording = false;
     renderExports();
   }
+}
+
+function snapshotButton(base: string) {
+  const b = h('button', { type: 'button', disabled: !mesh || recording }, `Make ${base}.png`);
+  b.addEventListener('click', async () => {
+    if (!mesh) return;
+    const name = `${base}.png`;
+    try {
+      // the preview's own camera, on a bigger grid
+      const { yaw, pitch, zoom, fitPitch } = viewer.view;
+      const r = createRenderer(mesh, mergeStyles(state.look, { width: 112, height: 56, aspect: 2, zoom, fitPitch }));
+      const builder = new RecordingBuilder();
+      builder.add(r.render({ yaw, pitch }));
+      const rec = builder.build(1, { title: base });
+      const raster = rasterize(rec, { color: state.page.fg, background: state.page.bg, cell: 14 });
+      raster.draw(0);
+      const blob = await new Promise<Blob | null>((res) => raster.canvas.toBlob(res, 'image/png'));
+      if (!blob) throw new Error('the browser made no image');
+      download(blob, name);
+      made = `Made ${name}: ${size(blob.size)}, ${raster.width}×${raster.height}`;
+    } catch (e) {
+      made = `Could not make ${name}: ${(e as Error).message}`;
+    }
+    renderExports();
+  });
+  return b;
 }
 
 const size = (n: number) => (n < 1024 * 1024 ? `${Math.round(n / 1024)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);

@@ -20,19 +20,20 @@ Each milestone ends with something people can use. Versions before 1.0 may chang
 
 ## Where things stand (November 2026)
 
-0.1 through 0.4 are done. textel works today as a **terminal tool, a library for
-Node, a web player, a live web viewer and a playground site**, published on npm as `@feelgxxd/textel` and
+0.1 through 0.5 are done. textel works today as a **terminal tool, a library for
+Node, a web player, a live web viewer and a playground site** that exports SVG, GIF, MP4, PNG and HTML,
+published on npm as `@feelgxxd/textel` and
 at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 
 | | |
 |---|---|
 | Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 86 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 10 golden-frame snapshots) |
+| Tests | 88 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 10 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
 | Web sizes | player 3.2 KB, viewer 11 KB, playground 19 KB (min+gzip) |
-| Published | `0.4.0` on npm; the playground deploys from `main` |
+| Published | `0.5.0` on npm; the playground deploys from `main` |
 
 ### What works
 - `textel <model>` spins a `.glb` / `.gltf` / `.obj` / `.stl` in the terminal, with keys for rotation,
@@ -181,7 +182,7 @@ Live at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 
 ---
 
-## 0.5: exports
+## 0.5: exports ✅
 
 Effort: **two sessions**.
 
@@ -190,10 +191,11 @@ Effort: **two sessions**.
   playground makes it at that size, the CLI at any size. The README shows one
 - [x] **GIF and MP4** in the playground: canvas, an own GIF encoder (only changed pixels per frame) and an
   own MP4 writer around WebCodecs H.264. 640×640 GIF ~600 KB, 1280×1280 MP4 ~1.4 MB for one 4 s turn
-- [ ] GIF and MP4 from the CLI: needs a way to draw glyphs without a browser (a bundled bitmap font, or
-  an optional add-on so the main package stays dependency-free); may move to the backlog
-- [ ] **Single frame**: PNG (playground), plain text and ANSI (CLI, already possible with `--once`)
-- [ ] **Single-file HTML**: player and frames inlined, works offline
+- [x] **Single frame**: PNG of the preview at its angle (playground, through the new `viewer.view`), plain
+  text and ANSI (CLI, `--once`)
+- [x] **Single-file HTML**: player and frames inlined, works offline (~450 KB); the player is bundled into the
+  site at build time, so the file never depends on a CDN
+- GIF and MP4 from the CLI: moved to the backlog; the playground makes both
 
 ---
 
@@ -230,6 +232,7 @@ Ideas that fit the project but are not on the path to 1.0. Value and effort are 
 |---|---|---|---|
 | Braille mode (2×4 dots per cell) | high | M | 8× the resolution; great for thin models |
 | Playground extras: live ramp preview next to the charset, light handle on a sphere, aspect control | medium | S | left over from 0.4 |
+| GIF and MP4 from the CLI | low | M | needs glyphs drawn without a browser: a bundled bitmap font that covers blocks and box drawing, or an optional add-on; the playground makes both today |
 | Half-block mode (two colored "pixels" per cell) | high | M | reads like pixel art; needs color |
 | Shape-matched glyphs | high | L | picks glyphs by the shape inside a cell, not only brightness; the biggest quality jump |
 | Play the model's own glTF animations | high | L | skinning and morph targets; turntable stays the default |
@@ -289,5 +292,6 @@ Made:
 
 ## Next session starts with
 
-1. 0.5: single-file HTML, and a PNG of one frame
-2. Release 0.5.0
+1. 1.0: choose the order: quality first (crease edges, steadier glyphs while spinning, model colors) or
+   the API review that freezes names and options
+2. Docs on the playground site
