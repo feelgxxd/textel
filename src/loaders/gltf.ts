@@ -7,7 +7,7 @@ interface GltfJson {
   scenes?: { nodes?: number[] }[];
   nodes?: { children?: number[]; mesh?: number; matrix?: number[]; translation?: number[]; rotation?: number[]; scale?: number[] }[];
   meshes?: { primitives: { attributes: Record<string, number>; indices?: number; material?: number; mode?: number }[] }[];
-  materials?: { name?: string }[];
+  materials?: { name?: string; pbrMetallicRoughness?: { baseColorFactor?: number[] } }[];
   accessors?: { bufferView?: number; byteOffset?: number; componentType: number; normalized?: boolean; count: number; type: string }[];
   bufferViews?: { buffer: number; byteOffset?: number; byteLength: number; byteStride?: number }[];
   buffers?: { uri?: string; byteLength: number }[];
@@ -85,6 +85,11 @@ export function parseGLTF(bytes: Uint8Array, opts: GltfOptions = {}): Mesh {
 
   const b = new MeshBuilder();
   const matName = (i: number | undefined) => (i === undefined ? 'default' : json.materials?.[i]?.name || `material${i}`);
+  // base colors are linear in glTF; white when a material does not say
+  const baseColor = (i: number | undefined) => {
+    const f = i === undefined ? undefined : json.materials?.[i]?.pbrMetallicRoughness?.baseColorFactor;
+    return [0, 1, 2].map((k) => (f && Number.isFinite(f[k]) ? Math.min(1, Math.max(0, f[k])) : 1));
+  };
   const visit = (ni: number, parent: number[], depth: number) => {
     if (depth > 64) throw new Error('node hierarchy too deep');
     const node = json.nodes?.[ni];
@@ -102,7 +107,9 @@ export function parseGLTF(bytes: Uint8Array, opts: GltfOptions = {}): Mesh {
       if (prim.attributes.POSITION === undefined) continue;
       const pos = read(prim.attributes.POSITION);
       const nor = prim.attributes.NORMAL !== undefined ? read(prim.attributes.NORMAL) : null;
-      const mat = b.material(matName(prim.material));
+      const mat = b.material(matName(prim.material)), base = baseColor(prim.material);
+      b.materialColor(mat, [toSRGB(base[0]), toSRGB(base[1]), toSRGB(base[2])]);
+      const col = prim.attributes.COLOR_0 !== undefined ? read(prim.attributes.COLOR_0) : null;
       const first = b.positions.length / 3;
       for (let v = 0; v < pos.count; v++) {
         const x = pos.data[v * 3], y = pos.data[v * 3 + 1], z = pos.data[v * 3 + 2];
@@ -111,6 +118,8 @@ export function parseGLTF(bytes: Uint8Array, opts: GltfOptions = {}): Mesh {
           const a = nor.data[v * 3], bb = nor.data[v * 3 + 1], c = nor.data[v * 3 + 2];
           b.vertex(X, Y, Z, nm[0] * a + nm[3] * bb + nm[6] * c, nm[1] * a + nm[4] * bb + nm[7] * c, nm[2] * a + nm[5] * bb + nm[8] * c);
         } else b.vertex(X, Y, Z);
+        // the renderer multiplies these by the material's base color
+        if (col) b.vertexColor(first + v, toSRGB(col.data[v * col.size]), toSRGB(col.data[v * col.size + 1]), toSRGB(col.data[v * col.size + 2]));
       }
       const idx = prim.indices !== undefined ? read(prim.indices).data : null;
       const n = idx ? idx.length : pos.count;
@@ -132,6 +141,12 @@ export function parseGLTF(bytes: Uint8Array, opts: GltfOptions = {}): Mesh {
   for (const r of roots) visit(r, I, 0);
   if (!b.indices.length) throw new Error('no triangle meshes found in the glTF');
   return b.build();
+}
+
+/** a linear color channel to sRGB, both 0..1 */
+export function toSRGB(x: number): number {
+  const v = Math.min(1, Math.max(0, x));
+  return v <= 0.0031308 ? v * 12.92 : v >= 1 ? 1 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
 }
 
 /** column-major 4x4 */

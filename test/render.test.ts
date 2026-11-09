@@ -149,3 +149,26 @@ test('steady glyphs blink less while a model turns, and steady 0 forgets the fra
   r.render({ yaw: 1 });
   assert.equal(toText(r.render({ yaw: 1.05 })), toText(createRenderer(gem, { width: 80, height: 40, steady: 0 }).render({ yaw: 1.05 })));
 });
+
+test("color 'model' draws the model's own colors, darker on darker glyphs", () => {
+  const red = parseOBJ(CUBE);
+  red.materialColors = [[1, 0.2, 0.2]];
+  const r = createRenderer(red, { width: 40, height: 20, aspect: 2, color: 'model' });
+  const f = r.render({ yaw: 0.6 });
+  const shade = new Map<string, number>();
+  for (let i = 0; i < f.chars.length; i++) {
+    if (f.chars[i] === ' ') continue;
+    const { rgb } = cellColor(f, i);
+    assert.ok(rgb && rgb[0] > rgb[1] * 3 && rgb[1] === rgb[2], `red: ${rgb}`);
+    // one shade per glyph
+    assert.equal(shade.get(f.chars[i]) ?? rgb[0], rgb[0], `glyph ${f.chars[i]}`);
+    shade.set(f.chars[i], rgb[0]);
+  }
+  assert.ok(shade.size >= 2, 'several glyphs');
+  const ramp = f.style.chars, ordered = [...shade].sort((a, b) => ramp.indexOf(a[0]) - ramp.indexOf(b[0])).map(([, v]) => v);
+  assert.deepEqual(ordered, [...ordered].sort((a, b) => a - b), 'brighter glyphs, brighter red');
+  // a model without colors keeps the default text color
+  const plain = createRenderer(parseOBJ(CUBE), { width: 40, height: 20, color: 'model' }).render({ yaw: 0.6 });
+  assert.equal(plain.rgb, null);
+  assert.ok(plain.chars.every((ch, i) => ch === ' ' || cellColor(plain, i).rgb === null));
+});

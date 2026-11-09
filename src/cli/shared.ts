@@ -78,7 +78,7 @@ export const INPUT_HELP = `input
 export const STYLE_HELP = `look
   -c, --chars <ramp|name>   charset name or a custom ramp, darkest first
   -p, --preset <file.json>  style file; flags override it
-      --color <#hex>        one color; --color #301000,#ffb000 for a gradient
+      --color <#hex>        one color; --color #301000,#ffb000 for a gradient; model for its own
       --no-color            plain characters
       --edges [mode]        outline the silhouette; depth also marks depth steps;
                             crease also folds of the surface; off

@@ -138,3 +138,43 @@ test('parseModelAsync gives the same mesh as parseModel and lets the event loop 
   assert.deepEqual(async.positions, sync.positions);
   assert.ok(ticks > 0, 'timers ran while it parsed');
 });
+
+test('gltf: base colors and vertex colors, converted to sRGB', () => {
+  // two triangles: one with a vertex color per corner, one with only its material's base color
+  const pos = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+  const col = new Uint8Array([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255]);
+  const bin = new Uint8Array(48);
+  bin.set(new Uint8Array(pos.buffer), 0);
+  bin.set(col, 36);
+  const json = {
+    asset: { version: '2.0' },
+    scenes: [{ nodes: [0] }],
+    nodes: [{ mesh: 0 }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0, COLOR_0: 1 }, material: 0 }, { attributes: { POSITION: 0 }, material: 1 }] }],
+    materials: [{ name: 'Painted' }, { name: 'Grey', pbrMetallicRoughness: { baseColorFactor: [0.2, 0.2, 0.2, 1] } }],
+    accessors: [
+      { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' },
+      { bufferView: 1, componentType: 5121, normalized: true, count: 3, type: 'VEC4' },
+    ],
+    bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: 36 }, { buffer: 0, byteOffset: 36, byteLength: 12 }],
+    buffers: [{ byteLength: 48, uri: 'data:application/octet-stream;base64,' + Buffer.from(bin).toString('base64') }],
+  };
+  const m = parseGLTF(new TextEncoder().encode(JSON.stringify(json)));
+  assert.deepEqual(m.materials, ['Painted', 'Grey']);
+  assert.deepEqual(m.materialColors![0], [1, 1, 1], 'white when the material does not say');
+  assert.ok(Math.abs(m.materialColors![1]![0] - 0.4845) < 1e-3, 'linear 0.2 is sRGB 0.48');
+  assert.deepEqual([...m.colors!.slice(0, 9)], [1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  assert.deepEqual([...m.colors!.slice(9, 18)], [1, 1, 1, 1, 1, 1, 1, 1, 1], 'no vertex colors: white, times the base color');
+});
+
+test('obj: vertex colors, and diffuse colors from the material library', () => {
+  const obj = 'mtllib parts.mtl\nv 0 0 0 1 0 0\nv 1 0 0 0 255 0\nv 0 1 0\nusemtl Paint\nf 1 2 3\nusemtl Bare\nf 1 3 2\n';
+  const mtl = 'newmtl Paint\nKd 0.2 0.4 0.6\nnewmtl Bare\nNs 10\n';
+  const m = parseOBJ(obj, { resolve: (uri) => { assert.equal(uri, 'parts.mtl'); return new TextEncoder().encode(mtl); } });
+  assert.deepEqual(m.materialColors, [[0.2, 0.4, 0.6], null]);
+  assert.deepEqual([...m.colors!.slice(0, 9)], [1, 0, 0, 0, 1, 0, 1, 1, 1], '0..255 is read too; no color is white');
+  // without the library the model still loads, without material colors
+  const bare = parseOBJ(obj, { resolve: () => { throw new Error('not found'); } });
+  assert.deepEqual(bare.materialColors, [null, null]);
+  assert.equal(parseOBJ(CUBE_OBJ).colors, null);
+});

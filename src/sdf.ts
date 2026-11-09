@@ -60,6 +60,8 @@ export interface SdfOptions {
   materials?: string[];
   /** material index at a point on the surface */
   material?: (x: number, y: number, z: number) => number;
+  /** color at a point on the surface, rgb 0..1 in sRGB; shown with `color: 'model'` */
+  color?: (x: number, y: number, z: number) => readonly [number, number, number];
 }
 
 /** Meshes a field with surface nets. Synchronous; see sdfToMeshSteps to spread the work out. */
@@ -126,7 +128,8 @@ export function* sdfToMeshSteps(field: Field, opts: SdfOptions): Generator<void,
       // outward normal = gradient of the field
       const nx = field(x + h, y, z) - field(x - h, y, z), ny = field(x, y + h, z) - field(x, y - h, z), nz = field(x, y, z + h) - field(x, y, z - h);
       const l = Math.hypot(nx, ny, nz) || 1;
-      cell[cid(i, j, k)] = b.vertex(x, y, z, nx / l, ny / l, nz / l);
+      const vi = (cell[cid(i, j, k)] = b.vertex(x, y, z, nx / l, ny / l, nz / l));
+      if (opts.color) { const [r, g, bl] = opts.color(x, y, z); b.vertexColor(vi, r, g, bl); }
     }
     yield;
   }

@@ -20,6 +20,8 @@ export interface Frame {
   lum: Float32Array;
   /** material index per cell, -1 for background */
   mat: Int16Array;
+  /** with `color: 'model'`, the model's own color per cell: r, g, b, and 255 where it has one (else 0) */
+  rgb: Uint8Array | null;
   materials: ResolvedMaterial[];
   style: Style;
 }
@@ -82,6 +84,10 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
   let sN = new Float32Array(0), cN = new Float32Array(0);
   // the previous frame's ramp step, material and edge direction per cell, for `steady`
   let pStep = new Int16Array(0), pMat = new Int16Array(0), pDir = new Int8Array(0);
+  // the model's own colors per sample (rgb, alpha) and per cell, only kept for `color: 'model'`
+  let sCol = new Float32Array(0), cCol = new Uint8Array(0);
+  const VC = mesh.colors ?? null, MC = mesh.materials.map((_, i) => mesh.materialColors?.[i] ?? null);
+  const colored = !!VC || MC.some((c) => c);
 
   function configure() {
     materials = mesh.materials.map((name) => resolveMaterial(name, style.materials[name]));
@@ -96,6 +102,9 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
     const creases = style.edges === 'crease';
     if (sN.length !== (creases ? sw * sh * 3 : 0)) sN = new Float32Array(creases ? sw * sh * 3 : 0);
     if (cN.length !== (creases ? n * 3 : 0)) cN = new Float32Array(creases ? n * 3 : 0);
+    const own = style.color.mode === 'model' && colored;
+    if (sCol.length !== (own ? sw * sh * 4 : 0)) sCol = new Float32Array(own ? sw * sh * 4 : 0);
+    if (cCol.length !== (own ? n * 4 : 0)) cCol = new Uint8Array(own ? n * 4 : 0);
   }
   configure();
 
@@ -184,6 +193,9 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
       }
 
       const inv = 1 / area, mat = TM[t], oa = OZ[ia], ob = OZ[ib], oc = OZ[ic], keepN = sN.length > 0;
+      const keepC = sCol.length > 0, mc = MC[mat];
+      // a material without a color of its own still shows the vertex colors, and nothing without those
+      const kr = mc ? mc[0] : 1, kg = mc ? mc[1] : 1, kb = mc ? mc[2] : 1, ka = mc || VC ? 1 : 0;
       for (let y = y0; y <= y1; y++) {
         const py = y + 0.5;
         for (let x = x0; x <= x1; x++) {
@@ -196,6 +208,15 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
           if (ooz <= sOoz[i]) continue;
           sOoz[i] = ooz;
           sMat[i] = mat;
+          if (keepC) {
+            const o = i * 4;
+            if (VC) {
+              sCol[o] = kr * (w0 * VC[pa] + w1 * VC[pb] + w2 * VC[pc]);
+              sCol[o + 1] = kg * (w0 * VC[pa + 1] + w1 * VC[pb + 1] + w2 * VC[pc + 1]);
+              sCol[o + 2] = kb * (w0 * VC[pa + 2] + w1 * VC[pb + 2] + w2 * VC[pc + 2]);
+            } else { sCol[o] = kr; sCol[o + 1] = kg; sCol[o + 2] = kb; }
+            sCol[o + 3] = ka;
+          }
           if (VN) {
             const nx = (w0 * VN[pa] + w1 * VN[pb] + w2 * VN[pc]) * flip;
             const ny = (w0 * VN[pa + 1] + w1 * VN[pb + 1] + w2 * VN[pc + 1]) * flip;
@@ -216,8 +237,8 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
     const n = ss * ss, need = Math.max(1, Math.ceil(style.coverage * n - 1e-9));
     const votes = new Int16Array(n);
     for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
-      let hit = 0, lum = 0, ooz = 0, nx = 0, ny = 0, nz = 0;
-      const keepN = cN.length > 0;
+      let hit = 0, lum = 0, ooz = 0, nx = 0, ny = 0, nz = 0, sr = 0, sg = 0, sb = 0, cn = 0;
+      const keepN = cN.length > 0, keepC = cCol.length > 0;
       for (let sy2 = 0; sy2 < ss; sy2++) for (let sx2 = 0; sx2 < ss; sx2++) {
         const i = (r * ss + sy2) * sw + c * ss + sx2;
         if (sMat[i] === BG) continue;
@@ -225,8 +246,13 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
         lum += sLum[i];
         if (sOoz[i] > ooz) ooz = sOoz[i];
         if (keepN) { nx += sN[i * 3]; ny += sN[i * 3 + 1]; nz += sN[i * 3 + 2]; }
+        if (keepC && sCol[i * 4 + 3]) { sr += sCol[i * 4]; sg += sCol[i * 4 + 1]; sb += sCol[i * 4 + 2]; cn++; }
       }
       const ci = r * W + c;
+      if (keepC) {
+        const k = cn ? 255 / cn : 0;
+        cCol[ci * 4] = sr * k; cCol[ci * 4 + 1] = sg * k; cCol[ci * 4 + 2] = sb * k; cCol[ci * 4 + 3] = cn ? 255 : 0;
+      }
       if (hit < need) { cMat[ci] = BG; cLum[ci] = 0; cOoz[ci] = 0; continue; }
       cMat[ci] = hit === 1 ? votes[0] : majority(votes, hit);
       cLum[ci] = lum / hit;
@@ -254,7 +280,7 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
     for (let i = 0; i < W * H; i++) pMat[i] = cMat[i];
     if (style.edges) drawEdges(chars, W, H);
 
-    return { width: W, height: H, chars, lum: cLum.slice(), mat: cMat.slice(), materials, style };
+    return { width: W, height: H, chars, lum: cLum.slice(), mat: cMat.slice(), rgb: cCol.length ? cCol.slice() : null, materials, style };
   }
 
   function drawEdges(chars: string[], W: number, H: number) {

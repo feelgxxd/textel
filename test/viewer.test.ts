@@ -49,6 +49,7 @@ test('viewer: attributes map onto style fields', () => {
   assert.deepEqual(s, { charset: 'hard', color: ['#301000', '#ffb000'], edges: 'outline', spin: 0 });
   assert.equal(styleFromAttributes((n) => (n === 'edges' ? 'off' : null)).edges, false);
   assert.equal(styleFromAttributes((n) => (n === 'edges' ? 'crease' : null)).edges, 'crease');
+  assert.equal(styleFromAttributes((n) => (n === 'color' ? 'model' : null)).color, 'model');
 });
 
 test('fitPitch keeps a tall model inside the grid while it is tilted', () => {

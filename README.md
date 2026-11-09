@@ -39,7 +39,7 @@ textel help <command>          all options of a command
 look
   -c, --chars <ramp|name>   charset name or a custom ramp, darkest first
   -p, --preset <file.json>  style file; flags override it
-      --color <#hex>        one color; --color #301000,#ffb000 for a gradient
+      --color <#hex>        one color; --color #301000,#ffb000 for a gradient; model for its own
       --edges [mode]        outline, depth (also depth steps) or crease (also folds)
       --light <x,y,z>       direction toward the light
 camera
@@ -80,7 +80,7 @@ Two elements, both without dependencies and both loaded with one script tag:
 | | `<textel-player>` | `<textel-viewer>` |
 |---|---|---|
 | shows | a recorded loop (`.textel.json`) | the model itself, rendered live |
-| size | about 3 KB | about 12 KB |
+| size | about 3 KB | about 13 KB |
 | dragging | scrubs through the loop | turns the model any way, with a flick |
 | best for | a spinning logo | something people play with |
 
@@ -216,6 +216,11 @@ Materials are matched by the names in the model file:
 | `{ "chars": "...", "color": "#hex", "opacity": 0.5 }` | its own ramp and color |
 
 Charsets: `classic`, `hard`, `detailed`, `blocks`, `dots`, `minimal`, or any string of your own.
+
+`"color": "model"` (`--color model`, `color="model"`) draws the colors in the file: glTF base colors and
+vertex colors, OBJ vertex colors and the diffuse colors of its `.mtl` (in the playground, drop both files
+together). Darker glyphs get a darker shade of the same color, so the shading still reads. Textures are
+not read yet. The built-in examples have colors too: `textel --example donut --color model`.
 
 While a model turns, a cell keeps its glyph until its brightness is clearly past the next step, so
 glyphs do not blink back and forth (`"steady": 0.5` by default, 0 to 1). With `"steady": 0` every frame

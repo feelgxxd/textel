@@ -50,6 +50,9 @@ test('site: CLI commands run with the real CLI', () => {
   const folds = state({ edges: 'crease' });
   assert.equal(cliCommand(folds, 'preview', 'a.glb'), 'npx @feelgxxd/textel a.glb --edges crease');
   assert.match(embedSnippet(folds, 'viewer', 'a.glb'), / edges="crease"/);
+  const own = state({ color: 'model' });
+  assert.equal(cliCommand(own, 'preview', 'a.glb'), 'npx @feelgxxd/textel a.glb --color model');
+  assert.match(embedSnippet(own, 'viewer', 'a.glb'), / color="model"/);
   assert.match(cliCommand(state({ light: [0, 1, 0] }), 'preview', 'a.glb'), /--preset look\.json/);
 
   // the flags the playground writes are flags the CLI accepts: swap the model for an example and run it

@@ -93,14 +93,14 @@ async function copy(text: string, button: HTMLButtonElement) {
 
 // ---------- the look, read and written through small accessors ----------
 
-const colorMode = () => (Array.isArray(state.look.color) && state.look.color.length > 1 ? 'gradient' : typeof state.look.color === 'string' && state.look.color !== 'none' ? 'mono' : 'none');
+const colorMode = () => (state.look.color === 'model' ? 'model' : Array.isArray(state.look.color) && state.look.color.length > 1 ? 'gradient' : typeof state.look.color === 'string' && state.look.color !== 'none' ? 'mono' : 'none');
 const colorAt = (i: 0 | 1) => {
   const c = state.look.color;
   if (Array.isArray(c)) return c[Math.min(i, c.length - 1)];
   return typeof c === 'string' && c.startsWith('#') ? c : i ? '#ffb000' : '#2a1400';
 };
 const setColor = (mode: string, from = colorAt(0), to = colorAt(1)) => {
-  state.look.color = mode === 'gradient' ? [from, to] : mode === 'mono' ? to : undefined;
+  state.look.color = mode === 'gradient' ? [from, to] : mode === 'mono' ? to : mode === 'model' ? 'model' : undefined;
 };
 const light = () => anglesFromLight(state.look.light ?? [-0.3, 0.35, 0.88]);
 
@@ -153,7 +153,7 @@ panels.append(
       for (const s of syncs) s();
     }),
     customChars,
-    select('Color', [['none', 'none (page color)'], ['mono', 'one color'], ['gradient', 'gradient']], colorMode, (v) => { setColor(v); for (const s of syncs) s(); }),
+    select('Color', [['none', 'none (page color)'], ['mono', 'one color'], ['gradient', 'gradient'], ['model', "the model's own"]], colorMode, (v) => { setColor(v); for (const s of syncs) s(); }),
     colorPicker('From (dark)', () => colorAt(0), (v) => setColor('gradient', v, colorAt(1))),
     colorPicker('To (bright)', () => colorAt(1), (v) => setColor(colorMode() === 'mono' ? 'mono' : 'gradient', colorAt(0), v)),
     select('Outline', [['off', 'off'], ['outline', 'silhouette'], ['depth', 'silhouette and depth steps'], ['crease', 'all of those and folds']],
@@ -206,7 +206,7 @@ function renderExports() {
   const base = modelFile.replace(/\.[a-z0-9]+$/i, '');
   const body: HTMLElement[] = [];
   if (tab === 'Live on a page') {
-    body.push(h('p', { class: 'note' }, `Put ${modelFile} next to your page. The viewer is about 12 KB and renders it live.`));
+    body.push(h('p', { class: 'note' }, `Put ${modelFile} next to your page. The viewer is about 13 KB and renders it live.`));
     body.push(codeBlock(embedSnippet(state, 'viewer', modelFile)));
     if (needsPreset(state.look)) body.push(h('p', { class: 'note' }, 'This look uses settings only a preset file carries; save it next to the page too.'), presetButton());
   } else if (tab === 'Recorded loop') {
@@ -403,7 +403,7 @@ async function loadExample(name: string) {
 async function loadFiles(files: File[]) {
   const main = files.find((f) => /\.(glb|gltf|obj|stl)$/i.test(f.name)) ?? files[0];
   if (!main) return;
-  // a .gltf may come with its .bin and textures in the same drop
+  // a .gltf may come with its .bin, an .obj with its .mtl, in the same drop
   const others = new Map<string, Uint8Array>();
   for (const f of files) if (f !== main) others.set(f.name, new Uint8Array(await f.arrayBuffer()));
   const m = await withBusy(`Reading ${main.name}…`, async () => parseModelAsync(new Uint8Array(await main.arrayBuffer()), main.name, {

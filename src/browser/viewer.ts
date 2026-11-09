@@ -36,6 +36,11 @@ async function fetchModel(url: string, signal: AbortSignal): Promise<Mesh> {
     for (const b of json.buffers ?? []) {
       if (b.uri && !b.uri.startsWith('data:')) buffers.set(decodeURIComponent(b.uri), await get(new URL(b.uri, new URL(url, location.href)).href));
     }
+  } else if (/\.obj(\?|#|$)/i.test(url)) {
+    // the material library brings the colors; a model without one still loads
+    for (const [, lib] of new TextDecoder().decode(bytes.subarray(0, 1 << 16)).matchAll(/^mtllib\s+(.+?)\s*$/gm)) {
+      try { buffers.set(lib, await get(new URL(lib, new URL(url, location.href)).href)); } catch { /* no colors from it */ }
+    }
   }
   return parseModelAsync(bytes, url.split(/[?#]/)[0], {
     resolve: (uri) => {

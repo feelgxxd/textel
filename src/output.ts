@@ -40,10 +40,22 @@ export function cellColor(frame: Frame, i: number): { rgb: RGB | null; faint: bo
   const m = frame.mat[i];
   if (m < 0) return { rgb: null, faint: false };
   const ms = frame.materials[m], cs = frame.style.color;
-  let rgb: RGB | null = ms.color ?? (cs.mode === 'gradient' ? gradient(cs.stops, gradientPosition(frame, ms.chars, frame.lum[i])) : cs.mode === 'mono' ? cs.fg : null);
+  let rgb: RGB | null = ms.color ?? (cs.mode === 'gradient' ? gradient(cs.stops, gradientPosition(frame, ms.chars, frame.lum[i])) : cs.mode === 'mono' ? cs.fg : cs.mode === 'model' ? own(frame, i, ms.chars) : null);
   if (!rgb) return { rgb: null, faint: ms.opacity < 1 };
   if (ms.opacity < 1) rgb = lerp(cs.bg ?? [0, 0, 0], rgb, ms.opacity);
   return { rgb: [Math.round(rgb[0]), Math.round(rgb[1]), Math.round(rgb[2])], faint: false };
+}
+
+/**
+ * The model's own color of a cell, a little darker on darker glyphs so the shading still reads in color.
+ * Shaded per glyph level and rounded, so neighbors share colors and there are fewer color changes to draw.
+ */
+function own(frame: Frame, i: number, ramp: string[] | null): RGB | null {
+  const c = frame.rgb;
+  if (!c || !c[i * 4 + 3]) return null;
+  const k = 0.55 + 0.45 * gradientPosition(frame, ramp, frame.lum[i]);
+  const q = (v: number) => Math.min(255, Math.round((v * k) / 12) * 12);
+  return [q(c[i * 4]), q(c[i * 4 + 1]), q(c[i * 4 + 2])];
 }
 
 /** ANSI-colored lines for a terminal. Color codes are only written when they change. */

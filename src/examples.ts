@@ -19,6 +19,10 @@ const SOFT_LIGHT: Vec3 = [-0.45, 0.6, 0.65];
 const BODY = 0, CARVED = 1, DIM = 2;
 const MATERIALS = ['body', 'carved', 'dim'];
 const LOOK = { materials: { carved: 'carved', dim: 'dim' } } satisfies StyleInput;
+// colors for `--color model`, rgb 0..1
+type RGB = readonly [number, number, number];
+const rgb = (hex: string): RGB => [0, 2, 4].map((k) => parseInt(hex.slice(1 + k, 3 + k), 16) / 255) as unknown as RGB;
+const RED = rgb('#d8473c'), WHITE = rgb('#ecebe6'), CREAM = rgb('#f1e6cf');
 const hard = (pitch: number): StyleInput => ({ ...LOOK, charset: 'hard', light: HARD_LIGHT, pitch });
 const soft = (pitch: number): StyleInput => ({ ...LOOK, charset: 'classic', light: SOFT_LIGHT, pitch });
 
@@ -27,8 +31,11 @@ function* donut() {
   // a torus is symmetric around its own axis, so spinning it flat would look still: the ring is
   // tilted 60° off the spin axis, and the turntable makes it tumble like donut.c
   const t = Math.PI / 3, c = Math.cos(t), s = Math.sin(t);
+  const icing = rgb('#e8739e'), dough = rgb('#d79a5a');
   return yield* sdfToMeshSteps((x, y, z) => sdTorus(x, y * c - z * s, y * s + z * c, 1, 0.45), {
     min: [-1.5, -1.5, -1.5], max: [1.5, 1.5, 1.5], step: 0.03,
+    // icing on the top half, with a wavy rim
+    color: (x, y, z) => (y * c - z * s > 0.08 * Math.sin(Math.atan2(y * s + z * c, x) * 9) ? icing : dough),
   });
 }
 
@@ -84,6 +91,7 @@ function* dice() {
   return yield* sdfToMeshSteps(field, {
     min: [-1.1, -1.1, -1.1], max: [1.1, 1.1, 1.1], step: 0.025, materials: MATERIALS,
     material: (x, y, z) => (pipAt([x, y, z]) ? CARVED : BODY),
+    color: () => RED,
   });
 }
 
@@ -117,6 +125,7 @@ function* rocket() {
       if (Math.abs(y + 0.55) < 0.06) return DIM;
       return BODY;
     },
+    color: (x, y, z) => (fins(x, y, z) < body(x, y, z) || y > 1.25 || Math.abs(y + 0.55) < 0.06 ? RED : nozzle(x, y, z) < body(x, y, z) ? rgb('#8a8f99') : WHITE),
   });
 }
 
@@ -133,6 +142,8 @@ function* planet() {
   return yield* sdfToMeshSteps((x, y, z) => Math.min(globe(x, y, z), ring(x, y, z)), {
     min: [-2.05, -1.2, -2.05], max: [2.05, 1.2, 2.05], step: 0.03, materials: MATERIALS,
     material: (x, y, z) => (ring(x, y, z) < globe(x, y, z) ? (Math.abs(Math.hypot(x * ct - y * st, z) - 1.6) < 0.06 ? CARVED : DIM) : BODY),
+    // bands by latitude on the globe
+    color: (x, y, z) => (ring(x, y, z) < globe(x, y, z) ? rgb('#cdb98f') : Math.sin(y * 9 + Math.sin(Math.atan2(z, x) * 3) * 0.4) > 0.2 ? rgb('#e0a96d') : CREAM),
   });
 }
 
@@ -149,6 +160,7 @@ function* mug() {
     min: [-0.9, -1, -0.9], max: [1.45, 1, 0.9], step: 0.022, materials: MATERIALS,
     // the inside reads darker
     material: (x, y, z) => (Math.hypot(x, z) < 0.71 && y > -0.7 ? DIM : BODY),
+    color: (x, y, z) => (Math.hypot(x, z) < 0.71 && y > -0.7 ? WHITE : rgb('#3f7fcf')),
   });
 }
 
@@ -166,7 +178,7 @@ function* gem() {
     const pavilion = u * 0.75 - y * 0.66 - 0.75;
     return Math.max(girdle, crown, table, pavilion);
   };
-  return yield* sdfToMeshSteps(field, { min: [-1.1, -1.2, -1.1], max: [1.1, 0.5, 1.1], step: 0.02 });
+  return yield* sdfToMeshSteps(field, { min: [-1.1, -1.2, -1.1], max: [1.1, 0.5, 1.1], step: 0.02, color: () => rgb('#53c1f0') });
 }
 
 export const EXAMPLES: Example[] = [

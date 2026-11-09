@@ -28,7 +28,7 @@ function kindOf(bytes: Uint8Array, filename: string): Kind {
  */
 export function* parseModelSteps(bytes: Uint8Array, filename = '', opts: GltfOptions = {}): Generator<void, Mesh> {
   const kind = kindOf(bytes, filename);
-  if (kind === 'obj') return yield* parseOBJSteps(new TextDecoder().decode(bytes));
+  if (kind === 'obj') return yield* parseOBJSteps(new TextDecoder().decode(bytes), opts);
   return kind === 'gltf' ? parseGLTF(bytes, opts) : parseSTL(bytes);
 }
 

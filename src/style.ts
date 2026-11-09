@@ -38,14 +38,17 @@ export interface ResolvedMaterial {
   carved: boolean;
 }
 
-/** `'none'`, a single `'#hex'` (mono), a list of hex stops (gradient by brightness) or the full object. */
+/**
+ * `'none'`, a single `'#hex'` (mono), a list of hex stops (gradient by brightness), `'model'` (the colors in
+ * the model file: base colors, vertex colors, `.mtl` diffuse colors) or the full object.
+ */
 export type ColorInput =
   | string
   | string[]
-  | { mode?: 'none' | 'mono' | 'gradient'; fg?: string; stops?: string[]; bg?: string };
+  | { mode?: 'none' | 'mono' | 'gradient' | 'model'; fg?: string; stops?: string[]; bg?: string };
 
 export interface ResolvedColor {
-  mode: 'none' | 'mono' | 'gradient';
+  mode: 'none' | 'mono' | 'gradient' | 'model';
   fg: RGB;
   stops: RGB[];
   bg: RGB | null;
@@ -228,6 +231,7 @@ export function parseHex(hex: string): RGB {
 export function resolveColor(c: ColorInput | undefined): ResolvedColor {
   const white: RGB = [255, 255, 255];
   if (c === undefined || c === 'none') return { mode: 'none', fg: white, stops: [], bg: null };
+  if (c === 'model') return { mode: 'model', fg: white, stops: [], bg: null };
   if (typeof c === 'string') return { mode: 'mono', fg: parseHex(c), stops: [], bg: null };
   if (Array.isArray(c)) {
     if (c.length === 1) return { mode: 'mono', fg: parseHex(c[0]), stops: [], bg: null };

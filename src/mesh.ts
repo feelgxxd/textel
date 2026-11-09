@@ -10,6 +10,10 @@ export interface Mesh {
   triMaterial: Uint16Array;
   /** material names; styles are looked up by these names */
   materials: string[];
+  /** rgb per vertex, 0..1 in sRGB, from the file (glTF COLOR_0, OBJ `v x y z r g b`); drawn times the material's color */
+  colors?: Float32Array | null;
+  /** the file's own color of each material, rgb 0..1 in sRGB, or null where it has none */
+  materialColors?: (readonly [number, number, number] | null)[];
 }
 
 export const vertexCount = (m: Mesh) => m.positions.length / 3;
@@ -24,6 +28,9 @@ export class MeshBuilder {
   materials: string[] = [];
   /** false as soon as one vertex arrives without a normal */
   hasNormals = true;
+  /** rgb per vertex, only once a vertex has a color (see vertexColor) */
+  colors: number[] | null = null;
+  materialColors: ([number, number, number] | null)[] = [];
   private matIndex = new Map<string, number>();
 
   material(name: string): number {
@@ -31,6 +38,7 @@ export class MeshBuilder {
     if (i === undefined) {
       i = this.materials.length;
       this.materials.push(name);
+      this.materialColors.push(null);
       this.matIndex.set(name, i);
     }
     return i;
@@ -48,6 +56,18 @@ export class MeshBuilder {
     return i;
   }
 
+  /** a color for vertex `i`, rgb 0..1 in sRGB; vertices without one are white */
+  vertexColor(i: number, r: number, g: number, b: number) {
+    const c = (this.colors ??= []);
+    while (c.length < this.positions.length) c.push(1);
+    c[i * 3] = r; c[i * 3 + 1] = g; c[i * 3 + 2] = b;
+  }
+
+  /** the file's color for a material, rgb 0..1 in sRGB */
+  materialColor(material: number, rgb: [number, number, number] | null) {
+    this.materialColors[material] = rgb;
+  }
+
   triangle(a: number, b: number, c: number, material: number) {
     this.indices.push(a, b, c);
     this.triMaterial.push(material);
@@ -55,12 +75,19 @@ export class MeshBuilder {
 
   build(): Mesh {
     if (this.materials.length === 0) this.material('default');
+    let colors: Float32Array | null = null;
+    if (this.colors) {
+      colors = new Float32Array(this.positions.length).fill(1);
+      colors.set(this.colors.slice(0, colors.length));
+    }
     return {
       positions: new Float32Array(this.positions),
       normals: this.hasNormals && this.positions.length ? normalizeAll(new Float32Array(this.normals)) : null,
       indices: new Uint32Array(this.indices),
       triMaterial: new Uint16Array(this.triMaterial),
       materials: this.materials,
+      colors,
+      materialColors: this.materialColors,
     };
   }
 }
