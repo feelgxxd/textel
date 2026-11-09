@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   anglesFromLight, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles, needsPreset, presetJSON, PRESETS, standaloneHTML, stateHash, VERSION, type State,
 } from '../site/src/state.ts';
+import { findExample } from '../src/examples.ts';
 
 const state = (look: State['look'], extra: Partial<State> = {}): State => ({ ...DEFAULT_STATE, look, ...extra });
 
@@ -109,4 +110,12 @@ test('site: the address stays plain until the look changes', async () => {
   assert.equal(await stateHash(back), '');
   assert.match(await stateHash(state({ ...DEFAULT_STATE.look, edges: 'outline' })), /^#z\./);
   assert.match(await stateHash({ ...structuredClone(DEFAULT_STATE), example: 'donut' }), /^#z\./);
+
+  // what the page does when it opens: load the default example, which adds its own material styles
+  const opened = structuredClone(DEFAULT_STATE), own = findExample(opened.example!)!.style.materials;
+  assert.ok(own, 'the default example has material styles of its own');
+  opened.look.materials = { ...own, ...opened.look.materials };
+  assert.equal(await stateHash(opened), '', 'opening the page leaves the address plain');
+  opened.look.materials = { ...opened.look.materials, carved: 'dim' };
+  assert.match(await stateHash(opened), /^#z\./, 'changing a material does count');
 });

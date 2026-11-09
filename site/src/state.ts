@@ -1,5 +1,6 @@
 // Playground state and everything derived from it that does not touch the DOM:
 // share links, embed snippets, CLI commands. Tested in test/site.test.ts.
+import { findExample } from '../../src/examples.ts';
 import { CHARSETS, type StyleInput, type Vec3 } from '../../src/style.ts';
 
 export const VERSION = '0.5';
@@ -86,8 +87,16 @@ export async function encodeState(s: State): Promise<string> {
 const canonical = (v: unknown): string => JSON.stringify(v, (_, x) =>
   x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).filter(([, y]) => y !== undefined).sort(([a], [b]) => (a < b ? -1 : 1))) : x);
 
+/** the state without what loading its example adds by itself (the example's own material styles) */
+function ownChanges(s: State): State {
+  const own = findExample(s.example ?? '')?.style.materials;
+  if (!own || !s.look.materials) return s;
+  const materials = Object.fromEntries(Object.entries(s.look.materials).filter(([k, v]) => canonical(v) !== canonical(own[k])));
+  return { ...s, look: { ...s.look, materials: Object.keys(materials).length ? materials : undefined } };
+}
+
 /** true when nothing differs from the page's starting state, so the address can stay plain */
-export const isDefaultState = (s: State) => canonical(s) === canonical(DEFAULT_STATE);
+export const isDefaultState = (s: State) => canonical(ownChanges(s)) === canonical(ownChanges(DEFAULT_STATE));
 
 /** the hash for a state: empty for the starting state */
 export const stateHash = async (s: State) => (isDefaultState(s) ? '' : '#' + (await encodeState(s)));
