@@ -5,18 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>textel playground</title>
   <meta name="description" content="Turn a 3D model into animated ASCII art, tune the look, and take it to your site or terminal.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext x='2' y='13' font-size='13' font-family='monospace' fill='%23ffb000'%3E%23%3C/text%3E%3C/svg%3E">
+  <meta name="theme-color" content="#0f0e0c">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
-  <header class="top">
-    <a class="brand" href="./">textel <span>playground</span></a>
-    <nav>
-      <a href="./docs/">Docs</a>
-      <a href="https://github.com/feelgxxd/textel">GitHub</a>
-      <a href="https://www.npmjs.com/package/@feelgxxd/textel">npm</a>
-    </nav>
-  </header>
+  <!--textel-header:playground:./-->
 
   <main class="app">
     <section class="stage">
@@ -39,6 +34,8 @@
 
     <aside class="panels" id="panels"></aside>
   </main>
+
+  <!--textel-footer-->
 
   <div class="drop-overlay" id="drop-overlay" hidden>Drop to load the model</div>
 

@@ -2,6 +2,8 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { defineConfig, type Plugin } from 'vite';
+import { readFileSync } from 'node:fs';
+import { footer, header, type Page } from './build/chrome.ts';
 import { docsPage } from './build/docs.ts';
 
 const PLAYER = 'virtual:textel-player';
@@ -27,6 +29,11 @@ function docs(): Plugin {
   return {
     name: 'textel-docs',
     transformIndexHtml(html) {
+      // the shared header and footer: <!--textel-header:page:root--> and <!--textel-footer-->
+      const version = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+      html = html
+        .replace(/<!--textel-header:(\w+):([^>]*?)-->/, (_, page: Page, root: string) => header(page, root))
+        .replace('<!--textel-footer-->', () => footer(version));
       if (!html.includes('<!--textel-docs-->')) return html;
       const { body, toc } = docsPage();
       return html.replace('<!--textel-docs-->', () => body).replace('<!--textel-toc-->', () => toc);
