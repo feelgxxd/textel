@@ -1,0 +1,19 @@
+name: Idea
+description: Something textel could do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: The idea
+      description: What you would like to make with textel, and what is missing today. The use matters more than the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: how
+    attributes:
+      label: How it could work
+      description: Optional. An option, a command, a look; anything you have in mind.
+  - type: markdown
+    attributes:
+      value: The [roadmap](https://github.com/feelgxxd/textel/blob/main/ROADMAP.md) lists what is planned and ideas already noted.

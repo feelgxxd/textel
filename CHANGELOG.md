@@ -38,6 +38,8 @@ the API may still change between minor versions. The frames file format has its 
   the guide, the CLI reference, the API and style reference (with defaults) and the frames format. It is
   made at build time from the README, the CLI's own help and the doc comments, so it follows the code;
   every export now has a doc comment
+- CONTRIBUTING, a code of conduct, SECURITY (report privately through GitHub), issue and pull request
+  templates, and notes on terminals in the README
 
 ### Changed
 - API review before 1.0. Removed: `computeSmoothNormals()` (use `creaseNormals(mesh, 180)`), the

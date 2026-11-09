@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Docs
+    url: https://feelgxxd.github.io/textel/docs/
+    about: The guide, the CLI and API reference, and the frames format
+  - name: Security problem
+    url: https://github.com/feelgxxd/textel/security/advisories/new
+    about: Report it privately, not in an issue

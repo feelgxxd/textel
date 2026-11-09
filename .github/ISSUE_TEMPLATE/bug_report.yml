@@ -1,0 +1,37 @@
+name: Bug
+description: Something does not work, or a model draws wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead. A screenshot or the text output helps.
+    validations:
+      required: true
+  - type: textarea
+    id: how
+    attributes:
+      label: How to get there
+      description: The command, the code or the playground steps. A link to the model, or the file attached, if you can share it.
+      placeholder: textel model.glb --edges crease
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      multiple: true
+      options:
+        - textel command (terminal)
+        - library (JavaScript or TypeScript)
+        - "<textel-viewer> or <textel-player> on a page"
+        - playground site
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: textel (textel --version), Node, and the terminal or browser and OS
+      placeholder: textel 0.5.0, Node 24, Windows Terminal on Windows 11
+    validations:
+      required: true

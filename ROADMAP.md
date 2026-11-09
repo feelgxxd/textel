@@ -222,8 +222,9 @@ Effort: **three to four sessions**, spread over the milestones above where possi
 ### Project
 - [x] Docs on the playground site (`/docs/`): the README as the guide, the CLI help, the API and style
   reference from the doc comments, and the format spec, all made at build time from those sources
-- [ ] Terminal compatibility notes: Windows Terminal, conhost, macOS Terminal, iTerm2, GNOME Terminal, kitty, Alacritty
-- [ ] CONTRIBUTING, code of conduct, issue and PR templates, CHANGELOG
+- [x] Terminal notes in the README: how colors are detected and fall back, cell aspect, glyphs beyond
+  ASCII, size. Not every terminal is checked by hand; reports go in issues
+- [x] CONTRIBUTING, code of conduct, SECURITY (private reports through GitHub), issue and PR templates, CHANGELOG
 - [ ] Semantic versioning from here on; the frames format keeps its own version
 - [ ] Repo public (if not earlier) and `@feelgxxd/textel@1.0.0` on npm
 
@@ -298,4 +299,4 @@ Made:
 
 ## Next session starts with
 
-1. CONTRIBUTING, code of conduct, issue and PR templates; terminal compatibility notes
+1. Safari and Firefox checks by hand (playground, viewer, player), then 1.0.0

@@ -78,6 +78,24 @@ await playSplash('logo.textel.json', { seconds: 2 }); // any key skips it
 `AbortSignal`, the output stream. Both restore the terminal however playback ends, and print a single
 frame when the output is not a terminal.
 
+### Terminals
+
+textel works in any terminal that understands ANSI escape codes, which is every current one, Windows
+Terminal included.
+
+- **Colors.** 24-bit color when the terminal says it has it (`COLORTERM=truecolor` or `24bit`), and in
+  Windows Terminal, VS Code and iTerm2; the 256-color palette everywhere else. A terminal with 24-bit
+  color that does not say so, like macOS Terminal on older systems, gets 256 colors; `COLORTERM=truecolor`
+  tells textel otherwise. `NO_COLOR` or `--no-color` turn color off, and `FORCE_COLOR` keeps it on
+  when the output is piped.
+- **Shape.** Characters are taller than they are wide; textel assumes twice as tall (`--aspect 2`). If
+  a model looks squashed or stretched in your font, try `--aspect 1.8` or `2.2`, or save it in a preset.
+- **Glyphs.** The `blocks` and `dots` charsets use a few characters beyond plain ASCII (`░▒▓█`,
+  `·•●`). Most monospace fonts have them; if one shows as a box, pick another charset or
+  font.
+- **Size.** The preview fills the window and follows it when you resize. Small fonts show more detail;
+  `--size 160x60` fixes the grid instead.
+
 ## On a web page
 
 Two elements, both without dependencies and both loaded with one script tag:
@@ -295,6 +313,11 @@ and keeps those lines one cell wide.
 ## Roadmap
 
 See [ROADMAP.md](ROADMAP.md).
+
+## Contributing
+
+Bug reports, models that draw badly, ideas and pull requests are welcome: see
+[CONTRIBUTING.md](CONTRIBUTING.md). Security problems go through [SECURITY.md](SECURITY.md).
 
 ## License
 
