@@ -10,6 +10,14 @@ the API may still change between minor versions. The frames file format has its 
 - `edges: 'crease'` (`--edges crease`, `edges="crease"`, the playground's Outline list, and `e` in the
   terminal preview): lines along folds of the surface as well, such as the edges of a cube or a gem's
   facets, one cell wide. `creaseAngle` sets how sharp a fold must be (40° by default)
+- Steadier glyphs while a model turns (`steady`, on by default): a cell keeps its glyph until its
+  brightness is clearly past the next step, and lines keep their direction. Glyphs that blink for one
+  frame and back are 75 to 90% fewer, and a recorded gem is about a quarter smaller. Recorded loops stay
+  seamless. `"steady": 0` makes every frame independent of the one before, as it was
+
+### Changed
+- The viewer is about 12 KB gzipped (was 11 KB); its size budget is now 14 KB to leave room for the
+  rest of 1.0
 
 ### Fixed
 - `depth` edges no longer fill a face seen at a slant with lines: a step is now told from a face whose

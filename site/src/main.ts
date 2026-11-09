@@ -206,7 +206,7 @@ function renderExports() {
   const base = modelFile.replace(/\.[a-z0-9]+$/i, '');
   const body: HTMLElement[] = [];
   if (tab === 'Live on a page') {
-    body.push(h('p', { class: 'note' }, `Put ${modelFile} next to your page. The viewer is about 11 KB and renders it live.`));
+    body.push(h('p', { class: 'note' }, `Put ${modelFile} next to your page. The viewer is about 12 KB and renders it live.`));
     body.push(codeBlock(embedSnippet(state, 'viewer', modelFile)));
     if (needsPreset(state.look)) body.push(h('p', { class: 'note' }, 'This look uses settings only a preset file carries; save it next to the page too.'), presetButton());
   } else if (tab === 'Recorded loop') {

@@ -28,11 +28,11 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | | |
 |---|---|
 | Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 92 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
+| Tests | 93 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
-| Web sizes | player 3.2 KB, viewer 11 KB, playground 19 KB (min+gzip) |
+| Web sizes | player 3.2 KB, viewer 12 KB, playground 19 KB (min+gzip) |
 | Published | `0.5.0` on npm; the playground deploys from `main` |
 
 ### What works
@@ -206,7 +206,7 @@ Effort: **three to four sessions**, spread over the milestones above where possi
 ### Quality
 - [x] Crease edges from normal discontinuities, not only silhouettes and depth steps (`edges: 'crease'`);
   depth edges now tell a real step from a face that only slants away
-- [ ] Steadier glyphs while spinning: hysteresis on edge glyphs and ramp steps
+- [x] Steadier glyphs while spinning: hysteresis on ramp steps, edge directions and lines (`steady`)
 - [ ] Model colors: vertex colors and material base color as a color mode
 - [ ] Smooth shading for models without normals, with a crease angle so hard edges stay hard
 - [ ] Large models: automatic decimation above a triangle budget
@@ -293,6 +293,6 @@ Made:
 
 ## Next session starts with
 
-1. 1.0 quality, continued: steadier glyphs while spinning, model colors, smooth shading without normals;
+1. 1.0 quality, continued: model colors, smooth shading without normals;
    then the API review that freezes names and options
 2. Docs on the playground site

@@ -80,6 +80,8 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
   let cOoz = new Float32Array(0), cLum = new Float32Array(0), cMat = new Int16Array(0);
   // surface normals per sample and per cell (xyz), only kept for crease lines
   let sN = new Float32Array(0), cN = new Float32Array(0);
+  // the previous frame's ramp step, material and edge direction per cell, for `steady`
+  let pStep = new Int16Array(0), pMat = new Int16Array(0), pDir = new Int8Array(0);
 
   function configure() {
     materials = mesh.materials.map((name) => resolveMaterial(name, style.materials[name]));
@@ -90,6 +92,7 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
     }
     const n = style.width * style.height;
     if (cOoz.length !== n) { cOoz = new Float32Array(n); cLum = new Float32Array(n); cMat = new Int16Array(n); }
+    if (pStep.length !== n) { pStep = new Int16Array(n); pMat = new Int16Array(n).fill(BG); pDir = new Int8Array(n).fill(-1); }
     const creases = style.edges === 'crease';
     if (sN.length !== (creases ? sw * sh * 3 : 0)) sN = new Float32Array(creases ? sw * sh * 3 : 0);
     if (cN.length !== (creases ? n * 3 : 0)) cN = new Float32Array(creases ? n * 3 : 0);
@@ -235,15 +238,20 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
     }
 
     // ---- glyphs ----
-    const chars: string[] = new Array(W * H);
+    const chars: string[] = new Array(W * H), steady = style.steady;
     for (let i = 0; i < W * H; i++) {
       const m = cMat[i];
       if (m === BG) { chars[i] = ' '; continue; }
       const ms = materials[m];
       if (ms.carved) { chars[i] = ' '; continue; }
-      const ramp = ms.chars ?? style.chars;
-      chars[i] = ramp[Math.min(ramp.length - 1, Math.floor(cLum[i] * ramp.length))];
+      const ramp = ms.chars ?? style.chars, x = cLum[i] * ramp.length, p = pStep[i];
+      let k = Math.min(ramp.length - 1, Math.floor(x));
+      // keep last frame's step until the brightness is clearly past it
+      if (pMat[i] === m && p !== k && p < ramp.length && x > p - steady && x < p + 1 + steady) k = p;
+      chars[i] = ramp[k];
+      pStep[i] = k;
     }
+    for (let i = 0; i < W * H; i++) pMat[i] = cMat[i];
     if (style.edges) drawEdges(chars, W, H);
 
     return { width: W, height: H, chars, lum: cLum.slice(), mat: cMat.slice(), materials, style };
@@ -257,24 +265,32 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
     // the angles '/' and '\' actually sit at in a cell this tall
     const diag = Math.atan(aspect), b1 = diag / 2, b2 = (diag + Math.PI / 2) / 2, b3 = Math.PI - b2, b4 = Math.PI - b1;
     const [hz, rise, vert, fall] = style.edgeChars;
+    // how far past a boundary between two directions a line may turn before its glyph follows
+    const slack = style.steady * 0.6, lo = [b4, b1, b2, b3], hi = [b1 + Math.PI, b2, b3, b4];
+    const near = (a: number, d: number) => {
+      const x = d === 0 && a < b2 ? a + Math.PI : a;
+      return x > lo[d] - slack && x < hi[d] + slack;
+    };
     for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
       const i = r * W + c;
-      if (cMat[i] === BG || materials[cMat[i]].carved) continue;
+      if (cMat[i] === BG || materials[cMat[i]].carved) { pDir[i] = -1; continue; }
       let edge = false, fold = false;
+      // a cell that was a line last frame stays one a little longer
+      const was = pDir[i] >= 0 ? 1 - style.steady / 2 : 1, step = th * was;
       for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         if (!solid(c + dc, r + dr)) { edge = true; break; }
         if (!depth) continue;
         // A step, not a slope: inverse depth runs straight across a flat face, so the neighbor is
         // predicted from the cell on the other side. Only the nearer side of a step gets the line.
         const expect = solid(c - dc, r - dr) ? 2 * cOoz[i] - cOoz[(r - dr) * W + c - dc] : cOoz[i];
-        if (expect - F(c + dc, r + dr) > th * cOoz[i]) { edge = true; break; }
+        if (expect - F(c + dc, r + dr) > step * cOoz[i]) { edge = true; break; }
       }
       if (!edge && crease) {
         // a fold where the surface turns sharply, kept only where it turns most, so lines stay one cell wide
         const [s, ax] = bend(c, r, W, H), [dc, dr] = ax ? [0, 1] : [1, 0];
-        fold = s > 1 - cosFold && s >= bend(c - dc, r - dr, W, H)[0] && s > bend(c + dc, r + dr, W, H)[0];
+        fold = s > (1 - cosFold) * was && s >= bend(c - dc, r - dr, W, H)[0] && s > bend(c + dc, r + dr, W, H)[0];
       }
-      if (!edge && !fold) continue;
+      if (!edge && !fold) { pDir[i] = -1; continue; }
       let gx = 0, gy = 0;
       if (edge) {
         // Sobel on inverse depth (background = 0); screen y points down
@@ -284,12 +300,17 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
       } else {
         [gx, gy] = foldGradient(c, r, W, H, aspect);
       }
-      if (gx === 0 && gy === 0) continue;
+      if (gx === 0 && gy === 0) { pDir[i] = -1; continue; }
       // the line runs perpendicular to the gradient
       let a = Math.atan2(gx, -gy);
       if (a < 0) a += Math.PI;
       if (a >= Math.PI) a -= Math.PI;
-      chars[i] = a < b1 || a >= b4 ? hz : a < b2 ? rise : a < b3 ? vert : fall;
+      let dir = a < b1 || a >= b4 ? 0 : a < b2 ? 1 : a < b3 ? 2 : 3;
+      // keep last frame's direction while the line is still close to it
+      const q = pDir[i];
+      if (q >= 0 && q !== dir && near(a, q)) dir = q;
+      pDir[i] = dir;
+      chars[i] = dir === 0 ? hz : dir === 1 ? rise : dir === 2 ? vert : fall;
     }
   }
 

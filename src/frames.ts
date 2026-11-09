@@ -31,8 +31,11 @@ const hex = (c: RGB) => '#' + c.map((v) => Math.max(0, Math.min(255, Math.round(
 export function recordLoop(renderer: Renderer, opts: RecordOptions = {}): Recording {
   const n = Math.max(1, Math.round(opts.frames ?? 120)), turns = opts.turns ?? 1, yaw0 = opts.yaw ?? 0;
   const rec = new RecordingBuilder(opts.colorStep ?? 8);
+  const yaw = (i: number) => yaw0 + (i / n) * turns * Math.PI * 2;
+  // steady glyphs remember the frame before: spin once first, so the first frame follows the last
+  if (renderer.style.steady > 0) for (let i = 0; i < n; i++) renderer.render({ yaw: yaw(i) });
   for (let i = 0; i < n; i++) {
-    rec.add(renderer.render({ yaw: yaw0 + (i / n) * turns * Math.PI * 2 }));
+    rec.add(renderer.render({ yaw: yaw(i) }));
     opts.onFrame?.(i + 1, n);
   }
   return rec.build(opts.fps ?? 30, opts.meta ?? {});

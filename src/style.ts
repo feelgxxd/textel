@@ -98,6 +98,13 @@ export interface StyleInput {
   edgeThreshold?: number;
   /** in `crease` mode, the angle in degrees between neighboring surfaces that counts as a fold (default 40) */
   creaseAngle?: number;
+  /**
+   * how far, as a share of one ramp step, a cell's brightness must move past a step before its glyph
+   * changes from the one it had in the previous frame (0 to 1, default 0.5). Keeps glyphs from blinking
+   * while a model turns; lines keep their direction and stay a little longer the same way. 0 makes every
+   * frame independent of the one before.
+   */
+  steady?: number;
   color?: ColorInput;
   /**
    * how many distinct colors a gradient uses. Default: one per glyph of the ramp, so a color
@@ -127,6 +134,7 @@ export interface Style {
   edgeChars: string[];
   edgeThreshold: number;
   creaseAngle: number;
+  steady: number;
   color: ResolvedColor;
   /** 0 = smooth; otherwise the number of gradient colors (default: the ramp length) */
   colorSteps: number;
@@ -150,6 +158,7 @@ export const DEFAULTS = {
   edgeChars: '-/|\\',
   edgeThreshold: 0.03,
   creaseAngle: 40,
+  steady: 0.5,
 };
 
 /** Later inputs win; materials are merged by name. */
@@ -201,6 +210,7 @@ export function resolveStyle(input: StyleInput = {}): Style {
     edgeChars,
     edgeThreshold: num(input.edgeThreshold, DEFAULTS.edgeThreshold, 0),
     creaseAngle: num(input.creaseAngle, DEFAULTS.creaseAngle, 1, 179),
+    steady: num(input.steady, DEFAULTS.steady, 0, 1),
     color: resolveColor(input.color),
     colorSteps: Math.round(num(input.colorSteps, -1, -1, 4096)),
     materials: input.materials ?? {},

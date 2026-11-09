@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { cellColor, createRenderer, toANSI, toHTML, toText } from '../src/index.ts';
+import { buildExample, EXAMPLES } from '../src/examples.ts';
 import { parseOBJ } from '../src/loaders/obj.ts';
 import { sdfToMesh, sdSphere, sdBox } from '../src/sdf.ts';
 
@@ -125,4 +126,26 @@ test('edges: crease draws the folds of a cube one cell wide, and none on a spher
   const plain = createRenderer(sphere, { width: 60, height: 30, aspect: 2, charset: 'hard', edges: 'outline' });
   const folded = createRenderer(sphere, { width: 60, height: 30, aspect: 2, charset: 'hard', edges: 'crease' });
   assert.equal(toText(folded.render({ yaw: 0.4 })), toText(plain.render({ yaw: 0.4 })), 'a smooth sphere has no folds');
+});
+
+test('steady glyphs blink less while a model turns, and steady 0 forgets the frame before', () => {
+  const ex = EXAMPLES.find((e) => e.name === 'gem')!, gem = buildExample(ex);
+  // a blink: a glyph that changes for one frame and changes back (cells at the silhouette that come and
+  // go are not glyphs changing)
+  const blinks = (steady: number) => {
+    const r = createRenderer(gem, { ...ex.style, width: 80, height: 40, edges: 'crease', steady });
+    const seq = Array.from({ length: 62 }, (_, i) => r.render({ yaw: (i / 60) * Math.PI * 2 }).chars);
+    let n = 0;
+    for (let t = 1; t <= 60; t++) for (let i = 0; i < seq[t].length; i++) {
+      const [a, b] = [seq[t - 1][i], seq[t][i]];
+      if (a === seq[t + 1][i] && a !== b && a !== ' ' && b !== ' ') n++;
+    }
+    return n;
+  };
+  const jumpy = blinks(0), calm = blinks(0.5);
+  assert.ok(calm < jumpy / 2, `${jumpy} blinks without, ${calm} with`);
+
+  const r = createRenderer(gem, { width: 80, height: 40, steady: 0 });
+  r.render({ yaw: 1 });
+  assert.equal(toText(r.render({ yaw: 1.05 })), toText(createRenderer(gem, { width: 80, height: 40, steady: 0 }).render({ yaw: 1.05 })));
 });

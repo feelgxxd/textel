@@ -80,7 +80,7 @@ Two elements, both without dependencies and both loaded with one script tag:
 | | `<textel-player>` | `<textel-viewer>` |
 |---|---|---|
 | shows | a recorded loop (`.textel.json`) | the model itself, rendered live |
-| size | about 3 KB | about 11 KB |
+| size | about 3 KB | about 12 KB |
 | dragging | scrubs through the loop | turns the model any way, with a flick |
 | best for | a spinning logo | something people play with |
 
@@ -216,6 +216,10 @@ Materials are matched by the names in the model file:
 | `{ "chars": "...", "color": "#hex", "opacity": 0.5 }` | its own ramp and color |
 
 Charsets: `classic`, `hard`, `detailed`, `blocks`, `dots`, `minimal`, or any string of your own.
+
+While a model turns, a cell keeps its glyph until its brightness is clearly past the next step, so
+glyphs do not blink back and forth (`"steady": 0.5` by default, 0 to 1). With `"steady": 0` every frame
+is drawn on its own, the same whatever came before.
 
 A gradient gives each glyph of the ramp one color, so colors change only where glyphs do; that keeps
 terminal output and web pages light. `"colorSteps": 0` makes it smooth instead, or set a number of steps.

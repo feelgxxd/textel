@@ -34,8 +34,12 @@ for (const e of EXAMPLES) {
       assert.deepEqual(back.glyphs, rec.glyphs);
       assert.deepEqual(back.styles, rec.styles);
       assert.equal(back.meta.title, e.title);
-      // the text of a played frame is exactly what the renderer drew
-      assert.equal(recordingText(back, 5), toText(r.render({ yaw: (5 / 24) * Math.PI * 2 })));
+      // the loop is seamless: after the last frame the renderer draws the first one again
+      assert.equal(recordingText(back, 0), toText(r.render({ yaw: 0 })));
+      // without steady glyphs, a played frame is exactly what a fresh renderer draws
+      const fresh = createRenderer(meshes.get(e.name)!, mergeStyles(e.style, { width: 64, height: 26, ...extra, steady: 0 }));
+      const plain = recordLoop(fresh, { frames: 24 });
+      assert.equal(recordingText(plain, 5), toText(fresh.render({ yaw: (5 / 24) * Math.PI * 2 })));
     });
   }
 }

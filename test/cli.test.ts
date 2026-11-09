@@ -1,7 +1,7 @@
 // Runs the real CLI in a child process, the way people use it.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
@@ -54,13 +54,15 @@ test('cli: render to a .svg writes an animated image', () => {
 });
 
 test('cli: a played frame is exactly the frame preview draws', () => {
-  assert.equal(textel('render', '--example', 'gem', '-o', 'gem.json', '--size', '50x20', '--frames', '8').code, 0);
+  // steady glyphs depend on the frame before, so compare frames that do not
+  writeFileSync(join(dir, 'fresh.json'), '{"steady":0}');
+  assert.equal(textel('render', '--example', 'gem', '-o', 'gem.json', '--size', '50x20', '--frames', '8', '-p', 'fresh.json').code, 0);
   const played = textel('play', 'gem.json', '--once', '--frame', '0');
-  const previewed = textel('--example', 'gem', '--once', '--yaw', '0', '--size', '50x20');
+  const previewed = textel('--example', 'gem', '--once', '--yaw', '0', '--size', '50x20', '-p', 'fresh.json');
   assert.equal(played.code, 0, played.err);
   assert.equal(played.out, previewed.out);
   // frame 2 of 8 is a quarter turn's worth further: yaw = 2/8 of a full turn
-  assert.equal(textel('play', 'gem.json', '--once', '--frame', '2').out, textel('--example', 'gem', '--once', '--yaw', String(Math.PI / 2), '--size', '50x20').out);
+  assert.equal(textel('play', 'gem.json', '--once', '--frame', '2').out, textel('--example', 'gem', '--once', '--yaw', String(Math.PI / 2), '--size', '50x20', '-p', 'fresh.json').out);
 });
 
 test('cli: clear errors', () => {
