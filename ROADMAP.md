@@ -211,7 +211,7 @@ Effort: **three to four sessions**, spread over the milestones above where possi
 - [x] Model colors: vertex colors and material base color as a color mode (`color: 'model'`)
 - [x] A note when a model keeps its colors in image textures (texture support itself moved after 1.0)
 - [x] Smooth shading for models without normals, with a crease angle so hard edges stay hard
-- [ ] Large models: automatic decimation above a triangle budget
+- [x] Large models: drawn from a simplified copy above a triangle budget (`maxTriangles`, vertex clustering)
 - [ ] Draco and meshopt compressed glTF
 
 ### API
@@ -288,7 +288,7 @@ Made:
 |---|---|
 | Frames files too big for casual embeds | measured: well under target; fewer frames or smaller grids as presets; binary container in reserve |
 | Glyph aspect differs per font and platform | measure in the browser; `--aspect` in the terminal; document common values |
-| Huge or odd models (millions of triangles, broken normals) | triangle budget with decimation; two-sided lighting is already in place |
+| Huge or odd models (millions of triangles, broken normals) | above 300k triangles a simplified copy is drawn (2M: 35 to 8 ms a frame); two-sided lighting is already in place |
 | Terminals handle fast redraws differently | redraw only changed rows; cap fps; compatibility notes |
 | Viewer bundle over budget | keep examples and SDF out of it; measure minified early in 0.3 |
 | The package name | npm refused unscoped `textel` as too close to `testem`; the scope `@feelgxxd/textel` is ours, and the command is still `textel` |
@@ -296,6 +296,6 @@ Made:
 
 ## Next session starts with
 
-1. 1.0 quality, continued: large models, compressed glTF;
+1. 1.0 quality, continued: compressed glTF;
    then the API review that freezes names and options
 2. Docs on the playground site

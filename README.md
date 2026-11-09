@@ -80,7 +80,7 @@ Two elements, both without dependencies and both loaded with one script tag:
 | | `<textel-player>` | `<textel-viewer>` |
 |---|---|---|
 | shows | a recorded loop (`.textel.json`) | the model itself, rendered live |
-| size | about 3 KB | about 13 KB |
+| size | about 3 KB | about 14 KB |
 | dragging | scrubs through the loop | turns the model any way, with a flick |
 | best for | a spinning logo | something people play with |
 
@@ -229,6 +229,10 @@ than `"creaseAngle"` (40° by default), so a low-poly ball looks round and a box
 While a model turns, a cell keeps its glyph until its brightness is clearly past the next step, so
 glyphs do not blink back and forth (`"steady": 0.5` by default, 0 to 1). With `"steady": 0` every frame
 is drawn on its own, the same whatever came before.
+
+A model with more than 300 000 triangles is drawn from a simplified copy (`"maxTriangles"`, 0 turns it
+off): the grid cannot show that much detail, so it looks the same and spins several times faster. Two
+million triangles go from 35 to 8 ms a frame. `simplifyMesh()` does the same in the library.
 
 A gradient gives each glyph of the ramp one color, so colors change only where glyphs do; that keeps
 terminal output and web pages light. `"colorSteps": 0` makes it smooth instead, or set a number of steps.

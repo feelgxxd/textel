@@ -11,7 +11,7 @@ import { canEncodeVideo, encodeMP4 } from './video.ts';
 import { parseModelAsync } from '../../src/loaders/index.ts';
 import type { Mesh } from '../../src/mesh.ts';
 import { createRenderer } from '../../src/render.ts';
-import { mergeStyles, type EdgeMode, type MaterialInput } from '../../src/style.ts';
+import { DEFAULTS, mergeStyles, type EdgeMode, type MaterialInput } from '../../src/style.ts';
 import {
   anglesFromLight, CHARSET_NAMES, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles,
   needsPreset, presetJSON, PRESETS, standaloneHTML, type State,
@@ -207,7 +207,7 @@ function renderExports() {
   const base = modelFile.replace(/\.[a-z0-9]+$/i, '');
   const body: HTMLElement[] = [];
   if (tab === 'Live on a page') {
-    body.push(h('p', { class: 'note' }, `Put ${modelFile} next to your page. The viewer is about 13 KB and renders it live.`));
+    body.push(h('p', { class: 'note' }, `Put ${modelFile} next to your page. The viewer is about 14 KB and renders it live.`));
     body.push(codeBlock(embedSnippet(state, 'viewer', modelFile)));
     if (needsPreset(state.look)) body.push(h('p', { class: 'note' }, 'This look uses settings only a preset file carries; save it next to the page too.'), presetButton());
   } else if (tab === 'Recorded loop') {
@@ -354,8 +354,8 @@ function showStatus() {
   if (!mesh) return;
   const tris = mesh.indices.length / 3;
   const mats = mesh.materials.length > 1 ? ` · ${mesh.materials.length} materials` : '';
-  // past this the preview still works, but slower devices start to drop frames
-  const heavy = tris > 500_000 ? ' · heavy model: it may stutter on slower devices, and embeds will be large' : '';
+  // past this the renderer draws a simplified copy; the embed still downloads the whole file
+  const heavy = tris > DEFAULTS.maxTriangles ? ' · drawn simplified, it looks the same; embeds still load the whole file' : '';
   const textures = mesh.textured && state.look.color === 'model' ? " · its colors come from image textures, which textel can't read yet" : '';
   statusLine.textContent = `${modelFile} · ${tris.toLocaleString()} triangles${mats}${heavy}${textures}`;
 }

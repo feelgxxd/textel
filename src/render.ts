@@ -1,4 +1,5 @@
 import { creaseNormals, type Mesh } from './mesh.ts';
+import { simplifyMesh } from './simplify.ts';
 import { mergeStyles, resolveMaterial, resolveStyle, type ResolvedMaterial, type Style, type StyleInput } from './style.ts';
 
 export interface View {
@@ -41,7 +42,11 @@ const BG = -1;
  * The model is centered and scaled to a unit sphere; the camera sits on +z looking at the origin.
  * Each cell is sampled `supersample`² times; the cell takes the mean brightness of the samples that hit.
  */
-export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
+export function createRenderer(source: Mesh, input: StyleInput = {}): Renderer {
+  let styleInput: StyleInput = input;
+  let style = resolveStyle(styleInput);
+  // a model far denser than the grid can show is drawn from a lighter copy
+  const mesh = simplifyMesh(source, style.maxTriangles);
   const nV = mesh.positions.length / 3, nT = mesh.indices.length / 3;
   if (!nT) throw new Error('the model has no triangles');
   const I = mesh.indices, TM = mesh.triMaterial;
@@ -75,8 +80,6 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
   const SX = new Float32Array(nV), SY = new Float32Array(nV), OZ = new Float32Array(nV);
   let VN: Float32Array | null = null;
 
-  let styleInput: StyleInput = input;
-  let style = resolveStyle(styleInput);
   let materials: ResolvedMaterial[] = [];
   let sw = 0, sh = 0;
   let sOoz = new Float32Array(0), sLum = new Float32Array(0), sMat = new Int16Array(0);
@@ -383,7 +386,7 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
   }
 
   return {
-    mesh,
+    mesh: source,
     get style() { return style; },
     setStyle(next: StyleInput) {
       styleInput = mergeStyles(styleInput, next);

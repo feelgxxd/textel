@@ -25,10 +25,12 @@ the API may still change between minor versions. The frames file format has its 
   brightness is clearly past the next step, and lines keep their direction. Glyphs that blink for one
   frame and back are 75 to 90% fewer, and a recorded gem is about a quarter smaller. Recorded loops stay
   seamless. `"steady": 0` makes every frame independent of the one before, as it was
+- Models with more than 300 000 triangles are drawn from a simplified copy (`maxTriangles`, 0 turns it
+  off), which looks the same at grid size: two million triangles draw in 8 ms a frame instead of 35, and
+  simplifying them takes about 160 ms once. `simplifyMesh()` in the library
 
 ### Changed
-- The viewer is about 13 KB gzipped (was 11 KB), with steady glyphs and model colors; its size budget is now 14 KB to leave room for the
-  rest of 1.0
+- The viewer is about 14 KB gzipped (was 11 KB), with steady glyphs, model colors and simplifying; its size budget is now 15 KB
 
 ### Fixed
 - `setStyle({ shading: 'flat' })` on a renderer that had drawn smooth kept drawing smooth

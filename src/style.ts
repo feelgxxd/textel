@@ -114,6 +114,12 @@ export interface StyleInput {
    * frame independent of the one before.
    */
   steady?: number;
+  /**
+   * a model with more triangles than this is drawn from a simplified copy (default 300 000; 0 never
+   * simplifies). The grid cannot show that much detail, so it looks the same and draws several times
+   * faster. Read when the renderer is created; setStyle does not change it.
+   */
+  maxTriangles?: number;
   color?: ColorInput;
   /**
    * how many distinct colors a gradient uses. Default: one per glyph of the ramp, so a color
@@ -144,6 +150,7 @@ export interface Style {
   edgeThreshold: number;
   creaseAngle: number;
   steady: number;
+  maxTriangles: number;
   color: ResolvedColor;
   /** 0 = smooth; otherwise the number of gradient colors (default: the ramp length) */
   colorSteps: number;
@@ -168,6 +175,7 @@ export const DEFAULTS = {
   edgeThreshold: 0.03,
   creaseAngle: 40,
   steady: 0.5,
+  maxTriangles: 300_000,
 };
 
 /** Later inputs win; materials are merged by name. */
@@ -220,6 +228,7 @@ export function resolveStyle(input: StyleInput = {}): Style {
     edgeThreshold: num(input.edgeThreshold, DEFAULTS.edgeThreshold, 0),
     creaseAngle: num(input.creaseAngle, DEFAULTS.creaseAngle, 1, 179),
     steady: num(input.steady, DEFAULTS.steady, 0, 1),
+    maxTriangles: Math.round(num(input.maxTriangles, DEFAULTS.maxTriangles, 0)),
     color: resolveColor(input.color),
     colorSteps: Math.round(num(input.colorSteps, -1, -1, 4096)),
     materials: input.materials ?? {},
