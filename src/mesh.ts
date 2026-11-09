@@ -105,36 +105,93 @@ function normalizeAll(n: Float32Array): Float32Array {
  * so a triangle soup (STL) still shades smoothly. Each face contributes its area-weighted normal.
  */
 export function computeSmoothNormals(m: Mesh): Float32Array {
-  const P = m.positions, I = m.indices, nV = P.length / 3;
-  // weld by quantized position
-  const ids = new Uint32Array(nV);
-  const keys = new Map<string, number>();
-  let b = [Infinity, -Infinity];
-  for (let i = 0; i < P.length; i++) { b[0] = Math.min(b[0], P[i]); b[1] = Math.max(b[1], P[i]); }
-  const q = 1e5 / Math.max(b[1] - b[0], 1e-9);
+  // smooth across every fold: each vertex ends up with one normal
+  const { normals, corners } = creaseNormals(m, 180), out = new Float32Array(m.positions.length);
+  for (let i = 0; i < corners.length; i++) out.set(normals.subarray(corners[i] * 3, corners[i] * 3 + 3), m.indices[i] * 3);
+  return out;
+}
+
+/** ids that are equal for vertices at the same position (quantized to 1e-5 of the model's size) */
+function weld(P: Float32Array): { ids: Uint32Array; count: number } {
+  const nV = P.length / 3, ids = new Uint32Array(nV);
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < P.length; i++) { if (P[i] < lo) lo = P[i]; if (P[i] > hi) hi = P[i]; }
+  const q = 1e5 / Math.max(hi - lo, 1e-9);
+  // open addressing on the quantized position: slot -> first vertex with it, +1 (0 = empty)
+  let size = 1;
+  while (size < nV * 2) size <<= 1;
+  const slots = new Int32Array(size), Q = new Int32Array(nV * 3);
+  let count = 0;
   for (let v = 0; v < nV; v++) {
-    const k = `${Math.round(P[v * 3] * q)},${Math.round(P[v * 3 + 1] * q)},${Math.round(P[v * 3 + 2] * q)}`;
-    let id = keys.get(k);
-    if (id === undefined) { id = keys.size; keys.set(k, id); }
-    ids[v] = id;
-  }
-  const acc = new Float64Array(keys.size * 3);
-  for (let t = 0; t < I.length; t += 3) {
-    const a = I[t] * 3, bb = I[t + 1] * 3, c = I[t + 2] * 3;
-    const e1x = P[bb] - P[a], e1y = P[bb + 1] - P[a + 1], e1z = P[bb + 2] - P[a + 2];
-    const e2x = P[c] - P[a], e2y = P[c + 1] - P[a + 1], e2z = P[c + 2] - P[a + 2];
-    // cross product length is twice the area, which is the weight we want
-    const nx = e1y * e2z - e1z * e2y, ny = e1z * e2x - e1x * e2z, nz = e1x * e2y - e1y * e2x;
-    for (const v of [I[t], I[t + 1], I[t + 2]]) {
-      const w = ids[v] * 3;
-      acc[w] += nx; acc[w + 1] += ny; acc[w + 2] += nz;
+    const x = Math.round((P[v * 3] - lo) * q), y = Math.round((P[v * 3 + 1] - lo) * q), z = Math.round((P[v * 3 + 2] - lo) * q);
+    Q[v * 3] = x; Q[v * 3 + 1] = y; Q[v * 3 + 2] = z;
+    let h = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663) ^ Math.imul(z, 83492791)) & (size - 1);
+    for (;;) {
+      const s = slots[h];
+      if (s === 0) { slots[h] = v + 1; ids[v] = count++; break; }
+      const u = s - 1;
+      if (Q[u * 3] === x && Q[u * 3 + 1] === y && Q[u * 3 + 2] === z) { ids[v] = ids[u]; break; }
+      h = (h + 1) & (size - 1);
     }
   }
-  const out = new Float32Array(nV * 3);
-  for (let v = 0; v < nV; v++) {
-    const w = ids[v] * 3;
-    const l = Math.hypot(acc[w], acc[w + 1], acc[w + 2]) || 1;
-    out[v * 3] = acc[w] / l; out[v * 3 + 1] = acc[w + 1] / l; out[v * 3 + 2] = acc[w + 2] / l;
+  return { ids, count };
+}
+
+/**
+ * Normals for a mesh that has none, smooth across gentle bends and hard across folds sharper than
+ * `angle` degrees. Each triangle corner gets the area-weighted mean of the faces around its vertex
+ * that turn less than `angle` from its own face. Returns the distinct normals and, for every corner
+ * (three per triangle, in index order), which normal it uses.
+ */
+export function creaseNormals(m: Mesh, angle: number): { normals: Float32Array; corners: Uint32Array } {
+  const P = m.positions, I = m.indices, nT = I.length / 3;
+  const { ids, count } = weld(P);
+  // face normals: length is twice the area, which is the weight
+  const fn = new Float64Array(nT * 3), fu = new Float64Array(nT * 3);
+  for (let t = 0; t < nT; t++) {
+    const a = I[t * 3] * 3, b = I[t * 3 + 1] * 3, c = I[t * 3 + 2] * 3;
+    const e1x = P[b] - P[a], e1y = P[b + 1] - P[a + 1], e1z = P[b + 2] - P[a + 2];
+    const e2x = P[c] - P[a], e2y = P[c + 1] - P[a + 1], e2z = P[c + 2] - P[a + 2];
+    const nx = e1y * e2z - e1z * e2y, ny = e1z * e2x - e1x * e2z, nz = e1x * e2y - e1y * e2x;
+    const l = Math.hypot(nx, ny, nz);
+    fn[t * 3] = nx; fn[t * 3 + 1] = ny; fn[t * 3 + 2] = nz;
+    if (l > 0) { fu[t * 3] = nx / l; fu[t * 3 + 1] = ny / l; fu[t * 3 + 2] = nz / l; }
   }
-  return out;
+  // the faces around each welded vertex
+  const start = new Uint32Array(count + 1);
+  for (let i = 0; i < I.length; i++) start[ids[I[i]] + 1]++;
+  for (let w = 0; w < count; w++) start[w + 1] += start[w];
+  const fill = start.slice(0, count), around = new Uint32Array(I.length);
+  for (let i = 0; i < I.length; i++) around[fill[ids[I[i]]]++] = (i / 3) | 0;
+
+  const cos = Math.cos((Math.min(180, Math.max(0, angle)) * Math.PI) / 180) - 1e-9;
+  const out: number[] = [], corners = new Uint32Array(I.length);
+  // normals already made at each welded vertex, as a linked list, so corners that agree share one
+  const head = new Int32Array(count).fill(-1), next: number[] = [];
+  for (let i = 0; i < I.length; i++) {
+    const t = (i / 3) | 0, w = ids[I[i]];
+    let x = 0, y = 0, z = 0;
+    for (let pass = 0; pass < 2 && x === 0 && y === 0 && z === 0; pass++) {
+      for (let k = start[w]; k < start[w + 1]; k++) {
+        const f = around[k];
+        // the second pass, for a face with no area, takes every face around the vertex
+        if (pass === 0 && fu[t * 3] * fu[f * 3] + fu[t * 3 + 1] * fu[f * 3 + 1] + fu[t * 3 + 2] * fu[f * 3 + 2] < cos) continue;
+        x += fn[f * 3]; y += fn[f * 3 + 1]; z += fn[f * 3 + 2];
+      }
+    }
+    const l = Math.hypot(x, y, z) || 1;
+    x /= l; y /= l; z /= l;
+    let found = -1;
+    for (let j = head[w]; j >= 0; j = next[j]) {
+      if (Math.abs(out[j * 3] - x) < 1e-5 && Math.abs(out[j * 3 + 1] - y) < 1e-5 && Math.abs(out[j * 3 + 2] - z) < 1e-5) { found = j; break; }
+    }
+    if (found < 0) {
+      found = out.length / 3;
+      out.push(x, y, z);
+      next.push(head[w]);
+      head[w] = found;
+    }
+    corners[i] = found;
+  }
+  return { normals: new Float32Array(out), corners };
 }

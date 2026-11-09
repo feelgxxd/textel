@@ -17,6 +17,9 @@ the API may still change between minor versions. The frames file format has its 
   function
 - `Mesh.colors` and `Mesh.materialColors`, `MeshBuilder.vertexColor()` and `materialColor()`, and
   `Frame.rgb`; `parseOBJ` takes `{ resolve }` for the material library
+- Models without normals (STL, many OBJ files) shade smooth except across folds sharper than
+  `creaseAngle`, instead of showing every face: a low-poly ball looks round, a box keeps its corners.
+  `shading: 'flat'` brings the facets back. `creaseNormals()` in the library
 - Steadier glyphs while a model turns (`steady`, on by default): a cell keeps its glyph until its
   brightness is clearly past the next step, and lines keep their direction. Glyphs that blink for one
   frame and back are 75 to 90% fewer, and a recorded gem is about a quarter smaller. Recorded loops stay
@@ -27,6 +30,8 @@ the API may still change between minor versions. The frames file format has its 
   rest of 1.0
 
 ### Fixed
+- `setStyle({ shading: 'flat' })` on a renderer that had drawn smooth kept drawing smooth
+- `shading: 'smooth'` welds vertices about four times faster (89k triangles: 100 ms to 20 ms)
 - `depth` edges no longer fill a face seen at a slant with lines: a step is now told from a face whose
   depth only changes fast but evenly. The gem example and some looks change a little because of it
 - The gem example has a little ambient light, so its unlit facets show instead of leaving gaps

@@ -28,7 +28,7 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | | |
 |---|---|
 | Code | ~3,300 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 96 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
+| Tests | 97 (loaders, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
@@ -54,7 +54,7 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | Live preview keys (`live.ts`) are only tested by hand; the screen and player under them are tested with fake streams | a key handling regression in preview would only show by hand | any time |
 | Checked by hand in desktop Chrome and one phone browser only | Safari, Firefox and other phones may differ | 1.0 |
 | Examples `rocket` and `mug` read less clearly than the others | weaker first impression | any time |
-| Draco / meshopt glTF rejected; flat shading when a model has no normals | some real files look worse or do not load | 1.0 |
+| Draco / meshopt glTF rejected; base color textures not read | some real files do not load or show no colors | 1.0 |
 
 ---
 
@@ -209,7 +209,7 @@ Effort: **three to four sessions**, spread over the milestones above where possi
 - [x] Steadier glyphs while spinning: hysteresis on ramp steps, edge directions and lines (`steady`)
 - [x] Model colors: vertex colors and material base color as a color mode (`color: 'model'`)
 - [ ] Base color textures: decode PNG and JPEG (the browser can; Node needs small decoders) and sample them
-- [ ] Smooth shading for models without normals, with a crease angle so hard edges stay hard
+- [x] Smooth shading for models without normals, with a crease angle so hard edges stay hard
 - [ ] Large models: automatic decimation above a triangle budget
 - [ ] Draco and meshopt compressed glTF
 
@@ -294,6 +294,6 @@ Made:
 
 ## Next session starts with
 
-1. 1.0 quality, continued: smooth shading without normals, base color textures;
+1. 1.0 quality, continued: base color textures, large models, compressed glTF;
    then the API review that freezes names and options
 2. Docs on the playground site

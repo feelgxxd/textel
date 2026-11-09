@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { cellColor, createRenderer, toANSI, toHTML, toText } from '../src/index.ts';
 import { buildExample, EXAMPLES } from '../src/examples.ts';
+import { creaseNormals, MeshBuilder } from '../src/mesh.ts';
 import { parseOBJ } from '../src/loaders/obj.ts';
 import { sdfToMesh, sdSphere, sdBox } from '../src/sdf.ts';
 
@@ -171,4 +172,55 @@ test("color 'model' draws the model's own colors, darker on darker glyphs", () =
   const plain = createRenderer(parseOBJ(CUBE), { width: 40, height: 20, color: 'model' }).render({ yaw: 0.6 });
   assert.equal(plain.rgb, null);
   assert.ok(plain.chars.every((ch, i) => ch === ' ' || cellColor(plain, i).rgb === null));
+});
+
+/** a low-poly ball on a stick as a triangle soup without normals, the way CAD tools write STL */
+function lowPoly() {
+  const b = new MeshBuilder(), m = b.material('m'), S = 20, R = 10;
+  const tri = (...p: number[][]) => b.triangle(...(p.map((q) => b.vertex(q[0], q[1], q[2])) as [number, number, number]), m);
+  const ball = (i: number, j: number) => {
+    const t = (i / S) * Math.PI * 2, f = (j / R) * Math.PI;
+    return [Math.sin(f) * Math.cos(t), 0.8 + Math.cos(f), Math.sin(f) * Math.sin(t)];
+  };
+  const stick = (i: number, y: number) => [0.6 * Math.cos((i / S) * Math.PI * 2), y, 0.6 * Math.sin((i / S) * Math.PI * 2)];
+  for (let i = 0; i < S; i++) {
+    for (let j = 0; j < R; j++) { tri(ball(i, j), ball(i + 1, j + 1), ball(i + 1, j)); tri(ball(i, j), ball(i, j + 1), ball(i + 1, j + 1)); }
+    tri(stick(i, -1.6), stick(i + 1, -1.6), stick(i + 1, 0)); tri(stick(i, -1.6), stick(i + 1, 0), stick(i, 0));
+    tri([0, -1.6, 0], stick(i + 1, -1.6), stick(i, -1.6));
+  }
+  return b.build();
+}
+
+test('models without normals shade smooth, and folds sharper than creaseAngle stay hard', () => {
+  const m = lowPoly();
+  assert.equal(m.normals, null);
+  // the stick's side is one smooth surface and its bottom a flat one: the corners at a vertex of the side
+  // share one normal, and the bottom's normals all point straight down
+  const { normals, corners } = creaseNormals(m, 40);
+  assert.equal(corners.length, m.indices.length);
+  const bottom = new Set<number>(), side = new Set<number>();
+  for (let t = 0; t < m.indices.length / 3; t++) {
+    const p = [0, 1, 2].map((k) => m.indices[t * 3 + k] * 3);
+    const set = p.every((o) => m.positions[o + 1] === -1.6) ? bottom : p.every((o) => Math.abs(Math.hypot(m.positions[o], m.positions[o + 2]) - 0.6) < 1e-6) ? side : null;
+    for (let k = 0; k < 3; k++) set?.add(corners[t * 3 + k]);
+  }
+  assert.equal(side.size, 40, 'one normal per side vertex, two rings of 20');
+  for (const n of bottom) assert.ok(normals[n * 3 + 1] < -0.999, 'pointing down');
+
+  // fewer jumps of two or more ramp steps between neighbors than with facets
+  const jumps = (shading: 'flat' | 'auto') => {
+    const f = createRenderer(m, { width: 60, height: 30, charset: 'classic', shading }).render({ yaw: 0.4 }), ramp = f.style.chars;
+    let n = 0;
+    for (let i = 0; i + 1 < f.chars.length; i++) if (f.mat[i] >= 0 && f.mat[i + 1] >= 0 && Math.abs(ramp.indexOf(f.chars[i]) - ramp.indexOf(f.chars[i + 1])) >= 2) n++;
+    return n;
+  };
+  assert.ok(jumps('auto') < jumps('flat'), `${jumps('auto')} jumps smooth, ${jumps('flat')} flat`);
+  // a cube has only sharp folds, so it looks the same either way
+  const cube = parseOBJ(CUBE);
+  assert.equal(toText(createRenderer(cube, { width: 40, height: 20 }).render({ yaw: 0.6 })), toText(createRenderer(cube, { width: 40, height: 20, shading: 'flat' }).render({ yaw: 0.6 })));
+  // and switching to flat later really goes flat
+  const r = createRenderer(m, { width: 60, height: 30, steady: 0 });
+  r.render({ yaw: 0.4 });
+  r.setStyle({ shading: 'flat' });
+  assert.equal(toText(r.render({ yaw: 0.4 })), toText(createRenderer(m, { width: 60, height: 30, shading: 'flat' }).render({ yaw: 0.4 })));
 });

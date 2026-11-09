@@ -84,7 +84,10 @@ export interface StyleInput {
   light?: Vec3;
   /** brightness floor, 0..1 */
   ambient?: number;
-  /** auto: smooth if the model has normals, flat otherwise */
+  /**
+   * auto: the model's own normals, or for a model without them (STL, many OBJ files) smooth, except across
+   * folds sharper than `creaseAngle`; smooth: smooth everywhere; flat: every face shows
+   */
   shading?: 'auto' | 'flat' | 'smooth';
   /** samples per cell along each axis (2 = 4 samples). Higher is steadier and slower. */
   supersample?: number;
@@ -99,7 +102,10 @@ export interface StyleInput {
   edgeChars?: string;
   /** depth jump (relative) that counts as an edge in `depth` and `crease` modes */
   edgeThreshold?: number;
-  /** in `crease` mode, the angle in degrees between neighboring surfaces that counts as a fold (default 40) */
+  /**
+   * the angle in degrees between neighboring faces that counts as a fold (default 40): `crease` lines
+   * follow folds, and a model without normals is shaded smooth except across them
+   */
   creaseAngle?: number;
   /**
    * how far, as a share of one ramp step, a cell's brightness must move past a step before its glyph

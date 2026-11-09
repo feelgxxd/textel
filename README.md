@@ -222,6 +222,10 @@ vertex colors, OBJ vertex colors and the diffuse colors of its `.mtl` (in the pl
 together). Darker glyphs get a darker shade of the same color, so the shading still reads. Textures are
 not read yet. The built-in examples have colors too: `textel --example donut --color model`.
 
+A model without normals of its own, such as an STL file, is shaded smooth except across folds sharper
+than `"creaseAngle"` (40° by default), so a low-poly ball looks round and a box keeps its corners.
+`"shading": "flat"` shows every face instead, and `"smooth"` smooths across everything.
+
 While a model turns, a cell keeps its glyph until its brightness is clearly past the next step, so
 glyphs do not blink back and forth (`"steady": 0.5` by default, 0 to 1). With `"steady": 0` every frame
 is drawn on its own, the same whatever came before.

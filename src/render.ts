@@ -1,4 +1,4 @@
-import { computeSmoothNormals, type Mesh } from './mesh.ts';
+import { creaseNormals, type Mesh } from './mesh.ts';
 import { mergeStyles, resolveMaterial, resolveStyle, type ResolvedMaterial, type Style, type StyleInput } from './style.ts';
 
 export interface View {
@@ -69,7 +69,8 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
     ry = Math.max(ry, Math.abs(P[v * 3 + 1]));
   }
 
-  let smoothN: Float32Array | null = null;
+  // normals and, per triangle corner, which one it uses; computed ones are kept for the angle they were made for
+  let creased: { normals: Float32Array; corners: Uint32Array; angle: number } | null = null;
   const VP = new Float32Array(nV * 3); // view space positions
   const SX = new Float32Array(nV), SY = new Float32Array(nV), OZ = new Float32Array(nV);
   let VN: Float32Array | null = null;
@@ -108,11 +109,14 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
   }
   configure();
 
-  function normals(): Float32Array | null {
+  /** the normals to shade with and which one each triangle corner uses, or null for flat shading */
+  function normals(): { N: Float32Array; corner: Uint32Array } | null {
     if (style.shading === 'flat') return null;
-    if (mesh.normals) return mesh.normals;
-    if (style.shading === 'smooth') return (smoothN ??= computeSmoothNormals(mesh));
-    return null;
+    if (mesh.normals) return { N: mesh.normals, corner: I };
+    // a model without normals: smooth, except across folds sharper than creaseAngle (or none at all)
+    const angle = style.shading === 'smooth' ? 180 : style.creaseAngle;
+    if (creased?.angle !== angle) creased = { ...creaseNormals(mesh, angle), angle };
+    return { N: creased.normals, corner: creased.corners };
   }
 
   /** focal length in samples: the model fits the grid at any yaw, at the resting pitch */
@@ -150,8 +154,9 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
       const ooz = 1 / (D - Z);
       OZ[v] = ooz; SX[v] = hw + f * X * ooz; SY[v] = hh - fy * Y * ooz;
     }
-    const N = normals();
-    if (N) {
+    const shade = normals(), N = shade?.N, NI = shade?.corner ?? I;
+    if (!N) VN = null;
+    else {
       if (!VN || VN.length !== N.length) VN = new Float32Array(N.length);
       for (let o = 0; o < N.length; o += 3) {
         const x = N[o], y = N[o + 1], z = N[o + 2];
@@ -173,7 +178,7 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
       if (x0 > x1 || y0 > y1) continue;
 
       // geometric normal in view space, oriented toward the camera
-      const pa = ia * 3, pb = ib * 3, pc = ic * 3;
+      const pa = ia * 3, pb = ib * 3, pc = ic * 3, na = NI[t * 3] * 3, nb = NI[t * 3 + 1] * 3, nc = NI[t * 3 + 2] * 3;
       const e1x = VP[pb] - VP[pa], e1y = VP[pb + 1] - VP[pa + 1], e1z = VP[pb + 2] - VP[pa + 2];
       const e2x = VP[pc] - VP[pa], e2y = VP[pc + 1] - VP[pa + 1], e2z = VP[pc + 2] - VP[pa + 2];
       let fnx = e1y * e2z - e1z * e2y, fny = e1z * e2x - e1x * e2z, fnz = e1x * e2y - e1y * e2x;
@@ -182,7 +187,7 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
       let flip = 1, flatLum = 0, fx = 0, fy = 0, fz = 0;
       if (VN) {
         // trust the vertex normals for "outside"; flip them when we see the inside of a face
-        const nsx = VN[pa] + VN[pb] + VN[pc], nsy = VN[pa + 1] + VN[pb + 1] + VN[pc + 1], nsz = VN[pa + 2] + VN[pb + 2] + VN[pc + 2];
+        const nsx = VN[na] + VN[nb] + VN[nc], nsy = VN[na + 1] + VN[nb + 1] + VN[nc + 1], nsz = VN[na + 2] + VN[nb + 2] + VN[nc + 2];
         if (fnx * nsx + fny * nsy + fnz * nsz < 0) { fnx = -fnx; fny = -fny; fnz = -fnz; }
         if (fnx * vx + fny * vy + fnz * vz < 0) flip = -1;
       } else {
@@ -218,9 +223,9 @@ export function createRenderer(mesh: Mesh, input: StyleInput = {}): Renderer {
             sCol[o + 3] = ka;
           }
           if (VN) {
-            const nx = (w0 * VN[pa] + w1 * VN[pb] + w2 * VN[pc]) * flip;
-            const ny = (w0 * VN[pa + 1] + w1 * VN[pb + 1] + w2 * VN[pc + 1]) * flip;
-            const nz = (w0 * VN[pa + 2] + w1 * VN[pb + 2] + w2 * VN[pc + 2]) * flip;
+            const nx = (w0 * VN[na] + w1 * VN[nb] + w2 * VN[nc]) * flip;
+            const ny = (w0 * VN[na + 1] + w1 * VN[nb + 1] + w2 * VN[nc + 1]) * flip;
+            const nz = (w0 * VN[na + 2] + w1 * VN[nb + 2] + w2 * VN[nc + 2]) * flip;
             const l = Math.hypot(nx, ny, nz) || 1;
             sLum[i] = amb + dif * Math.max(0, (nx * lx + ny * ly + nz * lz) / l);
             if (keepN) { sN[i * 3] = nx / l; sN[i * 3 + 1] = ny / l; sN[i * 3 + 2] = nz / l; }
