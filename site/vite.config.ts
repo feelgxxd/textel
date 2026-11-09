@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { defineConfig, type Plugin } from 'vite';
+import { docsPage } from './build/docs.ts';
 
 const PLAYER = 'virtual:textel-player';
 
@@ -21,15 +22,28 @@ function playerSource(): Plugin {
   };
 }
 
+/** fills docs/index.html with the guide, the CLI and API references and the format spec */
+function docs(): Plugin {
+  return {
+    name: 'textel-docs',
+    transformIndexHtml(html) {
+      if (!html.includes('<!--textel-docs-->')) return html;
+      const { body, toc } = docsPage();
+      return html.replace('<!--textel-docs-->', () => body).replace('<!--textel-toc-->', () => toc);
+    },
+  };
+}
+
 // npm run site (dev server) and npm run site:build (static files for GitHub Pages)
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
   // served at feelgxxd.github.io/textel/
   base: process.env.SITE_BASE ?? '/textel/',
-  plugins: [playerSource()],
+  plugins: [playerSource(), docs()],
   build: {
     outDir: fileURLToPath(new URL('../site-dist', import.meta.url)),
     emptyOutDir: true,
+    rollupOptions: { input: { main: fileURLToPath(new URL('index.html', import.meta.url)), docs: fileURLToPath(new URL('docs/index.html', import.meta.url)) } },
     target: 'es2022',
   },
   // the playground imports the library straight from ../src

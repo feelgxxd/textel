@@ -18,7 +18,9 @@ export interface Mesh {
   textured?: boolean;
 }
 
+/** The number of vertices in a mesh. */
 export const vertexCount = (m: Mesh) => m.positions.length / 3;
+/** The number of triangles in a mesh. */
 export const triangleCount = (m: Mesh) => m.indices.length / 3;
 
 /** Collects triangles into a Mesh. Loaders push into it and call `build()` once. */

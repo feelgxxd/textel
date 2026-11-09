@@ -9,6 +9,7 @@ import type { RGB } from './style.ts';
 export * from './format.ts';
 export { recordingSVG, type SVGOptions } from './svg.ts';
 
+/** Options of recordLoop. */
 export interface RecordOptions {
   /** frames in one full turn (default 120) */
   frames?: number;

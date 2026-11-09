@@ -2,6 +2,7 @@
 // included. Each frame is a group of text rows; one CSS animation shows the frames in turn.
 import type { Recording } from './format.ts';
 
+/** Options of recordingSVG. */
 export interface SVGOptions {
   /** width of one character cell in pixels; its height is width × the recording's aspect (default 8) */
   cell?: number;

@@ -217,10 +217,11 @@ Effort: **three to four sessions**, spread over the milestones above where possi
 
 ### API
 - [x] Review everything `src/index.ts` exports; mark internals as internal, freeze names and options
-- [ ] Generated API reference from the doc comments
+- [x] Generated API reference from the doc comments (every export has one; a test keeps it so)
 
 ### Project
-- [ ] Docs on the playground site: getting started, CLI reference, preset reference, API reference, format spec
+- [x] Docs on the playground site (`/docs/`): the README as the guide, the CLI help, the API and style
+  reference from the doc comments, and the format spec, all made at build time from those sources
 - [ ] Terminal compatibility notes: Windows Terminal, conhost, macOS Terminal, iTerm2, GNOME Terminal, kitty, Alacritty
 - [ ] CONTRIBUTING, code of conduct, issue and PR templates, CHANGELOG
 - [ ] Semantic versioning from here on; the frames format keeps its own version
@@ -297,4 +298,4 @@ Made:
 
 ## Next session starts with
 
-1. Docs on the playground site, with a generated API reference
+1. CONTRIBUTING, code of conduct, issue and PR templates; terminal compatibility notes

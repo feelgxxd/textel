@@ -3,11 +3,15 @@
 import { MeshBuilder, type Mesh } from './mesh.ts';
 import type { Vec3 } from './style.ts';
 
+/** A signed distance field: negative inside the shape, positive outside, zero on its surface. */
 export type Field = (x: number, y: number, z: number) => number;
 
+/** v limited to a..b */
 export const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+/** the part of v after the decimal point, always 0..1 */
 export const fract = (v: number) => v - Math.floor(v);
 
+/** sphere of radius r around the origin */
 export const sdSphere = (x: number, y: number, z: number, r: number) => Math.hypot(x, y, z) - r;
 
 /** axis-aligned box with half sizes hx hy hz, edges rounded by r */
@@ -50,6 +54,7 @@ export const smin = (a: number, b: number, k: number) => {
   return b + (a - b) * h - k * h * (1 - h);
 };
 
+/** Options of sdfToMesh. */
 export interface SdfOptions {
   /** bounds of the sampling grid */
   min: Vec3;

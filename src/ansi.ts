@@ -1,6 +1,7 @@
 // ANSI escape codes for colors, shared by every terminal output.
 import type { RGB } from './style.ts';
 
+/** How many colors a terminal shows: 24-bit, the 256-color palette, or none. */
 export type ColorDepth = 'truecolor' | '256' | 'none';
 
 export const RESET = '\x1b[0m';

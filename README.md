@@ -19,6 +19,8 @@ Draco compressed glTF needs Google's `draco3d` package, which textel does not sh
 next to a global textel, or `npm i draco3d` in your project. The playground and the viewer do not read
 Draco yet. Everything runs locally; nothing is uploaded.
 
+Docs, with the full CLI and API reference: **[feelgxxd.github.io/textel/docs](https://feelgxxd.github.io/textel/docs/)**.
+
 ## Playground
 
 **[feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/)**: drop a model into the page, tune the

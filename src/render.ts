@@ -2,6 +2,7 @@ import { creaseNormals, type Mesh } from './mesh.ts';
 import { simplifyMesh } from './simplify.ts';
 import { mergeStyles, resolveMaterial, resolveStyle, type ResolvedMaterial, type Style, type StyleInput } from './style.ts';
 
+/** Where the model is turned for one frame. The camera stays put. */
 export interface View {
   /** rotation around the vertical axis, radians */
   yaw?: number;
@@ -27,11 +28,15 @@ export interface Frame {
   style: Style;
 }
 
+/** Made by createRenderer: draws frames of one model, in a style that can change between frames. */
 export interface Renderer {
+  /** the mesh it was given (a dense one is drawn from a simplified copy, see `maxTriangles`) */
   readonly mesh: Mesh;
+  /** the current style, with every default filled in */
   readonly style: Style;
   /** merge into the current style input */
   setStyle(input: StyleInput): void;
+  /** draws one frame */
   render(view?: View): Frame;
 }
 

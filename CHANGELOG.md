@@ -34,6 +34,10 @@ the API may still change between minor versions. The frames file format has its 
 - Models with more than 300 000 triangles are drawn from a simplified copy (`maxTriangles`, 0 turns it
   off), which looks the same at grid size: two million triangles draw in 8 ms a frame instead of 35, and
   simplifying them takes about 160 ms once. `simplifyMesh()` in the library
+- Docs on the playground site at [feelgxxd.github.io/textel/docs](https://feelgxxd.github.io/textel/docs/):
+  the guide, the CLI reference, the API and style reference (with defaults) and the frames format. It is
+  made at build time from the README, the CLI's own help and the doc comments, so it follows the code;
+  every export now has a doc comment
 
 ### Changed
 - API review before 1.0. Removed: `computeSmoothNormals()` (use `creaseNormals(mesh, 180)`), the
@@ -44,6 +48,8 @@ the API may still change between minor versions. The frames file format has its 
 - The viewer is about 16 KB gzipped (was 11 KB), with steady glyphs, model colors, simplifying and meshopt; its size budget is now 17 KB
 
 ### Fixed
+- The playground keeps a plain address until the look changes, and again when it is back to how it
+  started; before, the look was always written into the URL hash
 - `setStyle({ shading: 'flat' })` on a renderer that had drawn smooth kept drawing smooth
 - `shading: 'smooth'` welds vertices about four times faster (89k triangles: 100 ms to 20 ms)
 - `depth` edges no longer fill a face seen at a slant with lines: a step is now told from a face whose

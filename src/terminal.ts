@@ -38,6 +38,7 @@ export function detectColorDepth(stream: Out = process.stdout, env: NodeJS.Proce
   return '256';
 }
 
+/** Options of Screen. */
 export interface ScreenOptions {
   output?: Out;
   /** keys arrive here when given; the input is put in raw mode */
@@ -107,8 +108,10 @@ export class Screen {
   }
 }
 
+/** Why play ended: the recording ran out, the user pressed q, Ctrl+C, or the signal aborted. */
 export type PlayResult = 'end' | 'quit' | 'interrupt' | 'abort';
 
+/** Options of play. */
 export interface PlayOptions {
   output?: Out;
   input?: In | null;

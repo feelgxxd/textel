@@ -1,7 +1,9 @@
 // The frames format: types, the byte stream and the JSON container. No dependencies, so the web
 // player can use it without pulling in the renderer. See docs/format.md for the layout.
 
+/** The frames format version this code writes and reads (the `textel` field of a frames file). */
 export const FORMAT_VERSION = 1;
+/** The name of the frame stream encoding (the `encoding` field of a frames file). */
 export const ENCODING = 'rle-delta-1';
 
 /**
@@ -207,6 +209,7 @@ export function decodeStream(
 
 // ---------- containers ----------
 
+/** A recording as the JSON container, with its frames encoded into `data`. */
 export function toFramesFile(rec: Recording): FramesFile {
   const file: FramesFile = {
     textel: FORMAT_VERSION,
@@ -226,6 +229,7 @@ export function toFramesFile(rec: Recording): FramesFile {
   return file;
 }
 
+/** A recording back from the JSON container. Throws on a version or encoding it does not know, or on bad data. */
 export function fromFramesFile(file: FramesFile): Recording {
   if (!file || typeof file !== 'object') throw new Error('not a textel frames file');
   if (file.textel !== FORMAT_VERSION) throw new Error(`frames format ${file.textel} is not supported (this version reads ${FORMAT_VERSION})`);
@@ -251,6 +255,7 @@ export function stringifyFrames(rec: Recording): string {
   return JSON.stringify(toFramesFile(rec));
 }
 
+/** A recording from the text of a `.textel.json` file. */
 export function parseFrames(text: string): Recording {
   let file: FramesFile;
   try { file = JSON.parse(text); } catch { throw new Error('not a textel frames file (invalid JSON)'); }

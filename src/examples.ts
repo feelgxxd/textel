@@ -4,6 +4,7 @@ import type { Mesh } from './mesh.ts';
 import { clamp, extrude, sdBox, sdCyl, sdfToMeshSteps, sdSphere, sdTorus } from './sdf.ts';
 import type { StyleInput, Vec3 } from './style.ts';
 
+/** A built-in scene. */
 export interface Example {
   name: string;
   title: string;
@@ -181,6 +182,7 @@ function* gem() {
   return yield* sdfToMeshSteps(field, { min: [-1.1, -1.2, -1.1], max: [1.1, 0.5, 1.1], step: 0.02, color: () => rgb('#53c1f0') });
 }
 
+/** The built-in scenes, as `textel --example <name>` and the playground offer them. */
 export const EXAMPLES: Example[] = [
   { name: 'donut', title: 'DONUT', description: 'the classic torus', style: { charset: 'classic', pitch: 0.2 }, build: donut },
   { name: 'dice', title: 'DICE', description: 'a die with carved pips', style: hard(0.45), build: dice },
@@ -190,11 +192,13 @@ export const EXAMPLES: Example[] = [
   { name: 'gem', title: 'GEM', description: 'flat facets, good with --shading flat', style: { ...hard(0.35), edges: 'depth', ambient: 0.12 }, build: gem },
 ];
 
+/** An example by its name or title, ignoring case. */
 export function findExample(name: string): Example | undefined {
   const n = name.toLowerCase();
   return EXAMPLES.find((e) => e.name === n || e.title.toLowerCase() === n);
 }
 
+/** Meshes an example in one go; `build()` is the same work in steps. */
 export function buildExample(e: Example): Mesh {
   const g = e.build();
   let r = g.next();

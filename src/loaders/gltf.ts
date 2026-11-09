@@ -33,6 +33,7 @@ export type DracoDecode = (
   attributes: Record<string, { id: number; components: number; componentType: number }>,
 ) => { indices: Uint32Array; attributes: Record<string, ArrayLike<number>> };
 
+/** Options of parseGLTF. */
 export interface GltfOptions {
   /** loads an external buffer (`.gltf` with a separate `.bin`) by its uri */
   resolve?: (uri: string) => Uint8Array;

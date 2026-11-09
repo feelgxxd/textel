@@ -1,4 +1,6 @@
+/** x, y, z. */
 export type Vec3 = [number, number, number];
+/** A color as red, green, blue, each 0 to 255. */
 export type RGB = [number, number, number];
 
 // Paul Bourke's 70-level ramp, flipped so it runs dark to bright like the others
@@ -29,6 +31,7 @@ export type MaterialInput =
   | 'dim'
   | { chars?: string; charset?: string; color?: string; opacity?: number; carved?: boolean };
 
+/** A material as the renderer uses it: a MaterialInput with everything filled in. */
 export interface ResolvedMaterial {
   name: string;
   /** own ramp, or null for the style's */
@@ -47,6 +50,7 @@ export type ColorInput =
   | string[]
   | { mode?: 'none' | 'mono' | 'gradient' | 'model'; fg?: string; stops?: string[]; bg?: string };
 
+/** A ColorInput with everything filled in, colors parsed. */
 export interface ResolvedColor {
   mode: 'none' | 'mono' | 'gradient' | 'model';
   fg: RGB;
@@ -54,6 +58,7 @@ export interface ResolvedColor {
   bg: RGB | null;
 }
 
+/** Which lines to draw: none, the silhouette, also depth steps, also folds. See `edges`. */
 export type EdgeMode = false | 'outline' | 'depth' | 'crease';
 
 /** Everything about the look. Every field is optional; see DEFAULTS. This is what a preset file holds. */
@@ -130,6 +135,7 @@ export interface StyleInput {
   materials?: Record<string, MaterialInput>;
 }
 
+/** A StyleInput with every default filled in and every value checked; what a renderer works with. */
 export interface Style {
   width: number;
   height: number;
@@ -157,6 +163,7 @@ export interface Style {
   materials: Record<string, MaterialInput>;
 }
 
+/** The values a style takes when it does not say. */
 export const DEFAULTS = {
   width: 80,
   height: 40,
@@ -198,6 +205,7 @@ export function resolveRamp(chars: string | undefined, charset: string | undefin
   return [...r];
 }
 
+/** Fills in the defaults and checks every value: numbers are clamped to their range, and an unknown charset or a bad color throws. */
 export function resolveStyle(input: StyleInput = {}): Style {
   const num = (v: number | undefined, d: number, min = -Infinity, max = Infinity) => {
     const n = v ?? d;

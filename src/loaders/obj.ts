@@ -1,5 +1,6 @@
 import { MeshBuilder, type Mesh } from '../mesh.ts';
 
+/** Options of parseOBJ. */
 export interface ObjOptions {
   /** loads a material library (`mtllib`) by its name; without it, or when it throws, materials have no color */
   resolve?: (uri: string) => Uint8Array;

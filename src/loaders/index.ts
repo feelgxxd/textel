@@ -8,6 +8,7 @@ export { parseGLTF, parseOBJ, parseOBJSteps, parseSTL, type DracoDecode, type Gl
 /** for every format: `resolve` loads files next to the model (`.bin`, `.mtl`), `draco` reads Draco glTF */
 export interface ModelOptions extends GltfOptions, ObjOptions {}
 
+/** The file extensions parseModel reads, for file pickers and drop zones. */
 export const MODEL_EXTENSIONS = ['.glb', '.gltf', '.obj', '.stl'];
 
 type Kind = 'gltf' | 'obj' | 'stl';
