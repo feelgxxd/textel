@@ -1,3 +1,5 @@
+<a href="https://github.com/feelgxxd"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/feelgxxd/feelgxxd/main/assets/banners/textel-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/feelgxxd/feelgxxd/main/assets/banners/textel-light.svg"><img alt="textel, a feelgxxd tape" src="https://raw.githubusercontent.com/feelgxxd/feelgxxd/main/assets/banners/textel-dark.svg" width="100%"></picture></a>
+
 # textel
 
 Turn 3D models into animated ASCII art, in the terminal and on the web.
