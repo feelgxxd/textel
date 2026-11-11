@@ -73,6 +73,18 @@ test('render: setStyle resizes', () => {
   assert.equal(f.chars.length, 360);
 });
 
+test('render: setStyle merges and keeps what it leaves out; replaceStyle starts over', () => {
+  const r = createRenderer(sphere, { width: 10, height: 5, chars: 'ab', color: '#ff0000' });
+  r.setStyle({ charset: 'blocks', chars: undefined, color: undefined });
+  assert.equal(r.style.chars.join(''), 'ab', 'undefined does not clear a field in a merge');
+  assert.equal(r.style.color.mode, 'mono');
+  r.replaceStyle({ width: 10, height: 5, charset: 'blocks' });
+  assert.equal(r.style.chars.join(''), ' ░▒▓█');
+  assert.equal(r.style.color.mode, 'none');
+  assert.throws(() => r.replaceStyle({ charset: 'nope' }), /unknown charset/);
+  assert.equal(r.style.chars.join(''), ' ░▒▓█', 'a bad style leaves the renderer as it was');
+});
+
 test('style errors are explicit', () => {
   assert.throws(() => createRenderer(sphere, { charset: 'nope' }), /unknown charset/);
   assert.throws(() => createRenderer(sphere, { color: 'red' }), /not a hex color/);

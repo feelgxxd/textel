@@ -34,8 +34,13 @@ export interface Renderer {
   readonly mesh: Mesh;
   /** the current style, with every default filled in */
   readonly style: Style;
-  /** merge into the current style input */
+  /**
+   * merge into the current style input: fields it leaves out, or sets to undefined, keep their value.
+   * To take a field back to its default, use replaceStyle.
+   */
   setStyle(input: StyleInput): void;
+  /** the whole style input at once, in place of everything given before (missing fields take their defaults) */
+  replaceStyle(input: StyleInput): void;
   /** draws one frame */
   render(view?: View): Frame;
 }
@@ -396,6 +401,13 @@ export function createRenderer(source: Mesh, input: StyleInput = {}): Renderer {
     setStyle(next: StyleInput) {
       styleInput = mergeStyles(styleInput, next);
       style = resolveStyle(styleInput);
+      configure();
+    },
+    replaceStyle(next: StyleInput) {
+      // resolve first, so a bad style throws and leaves the renderer as it was
+      const resolved = resolveStyle(next);
+      styleInput = next;
+      style = resolved;
       configure();
     },
     render,

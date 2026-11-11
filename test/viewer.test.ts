@@ -134,6 +134,22 @@ test('viewer dom: keys turn it, attributes and presets restyle it', async () => 
   el.remove();
 });
 
+test('viewer dom: a new look replaces the old one, it does not pile on it', () => {
+  // the playground's Characters menu: a custom ramp, then a named charset again
+  const el = mount({ paused: '', cols: '40' });
+  el.mesh = buildExample(EXAMPLES.find((e) => e.name === 'dice')!);
+  el.look = { chars: ' xo' };
+  assert.match(screen(el).textContent!, /^[ xo\n]+$/, 'drawn with the custom ramp');
+  el.look = { charset: 'blocks', chars: undefined };
+  assert.match(screen(el).textContent!, /[░▒▓█]/, 'the named charset is back');
+  assert.doesNotMatch(screen(el).textContent!, /[xo]/);
+  el.look = { color: '#ff0000' };
+  assert.match(screen(el).innerHTML, /color:#ff0000/);
+  el.look = {};
+  assert.doesNotMatch(screen(el).innerHTML, /color:#ff0000/, 'color none really is none again');
+  el.remove();
+});
+
 test('viewer dom: space pauses at once, and plays again', async () => {
   const el = mount({ cols: '40' });
   el.mesh = buildExample(EXAMPLES.find((e) => e.name === 'gem')!);

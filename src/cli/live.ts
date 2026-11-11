@@ -29,6 +29,10 @@ export function live(opts: LiveOptions) {
   const spin = base.spin || 0.66;
   let fps = 0, frames = 0, acc = 0, last = performance.now();
   let timer: ReturnType<typeof setInterval> | undefined;
+  // the whole look as it is now; every key changes it and hands all of it over, so a field set back to
+  // undefined (a custom ramp, say) really goes back to its default
+  let look: StyleInput = {};
+  const restyle = (patch: StyleInput) => { look = { ...look, ...patch }; renderer.replaceStyle(look); };
 
   const quit = (code = 0) => {
     clearInterval(timer);
@@ -44,29 +48,31 @@ export function live(opts: LiveOptions) {
       case '\x1b[D': yaw -= 0.2; break;
       case '\x1b[A': pitchOffset -= 0.15; break;
       case '\x1b[B': pitchOffset += 0.15; break;
-      case '+': case '=': zoom *= 1.1; renderer.setStyle({ zoom }); break;
-      case '-': case '_': zoom /= 1.1; renderer.setStyle({ zoom }); break;
+      case '+': case '=': zoom *= 1.1; restyle({ zoom }); break;
+      case '-': case '_': zoom /= 1.1; restyle({ zoom }); break;
       case 'c': {
         const i = charsets.indexOf(charsetName);
         charsetName = charsets[(i + 1) % charsets.length];
-        renderer.setStyle({ charset: charsetName, chars: undefined });
+        restyle({ charset: charsetName, chars: undefined });
         break;
       }
       case 'e':
         edgeMode = (edgeMode + 1) % EDGE_MODES.length;
-        renderer.setStyle({ edges: EDGE_MODES[edgeMode] });
+        restyle({ edges: EDGE_MODES[edgeMode] });
         break;
       case 'l': {
         // swing the light around the model in 45° steps
         light = (light + 1) % 8;
         const a = (light * Math.PI) / 4, [lx, ly, lz] = base.light;
-        renderer.setStyle({ light: [lx * Math.cos(a) + lz * Math.sin(a), ly, -lx * Math.sin(a) + lz * Math.cos(a)] });
+        restyle({ light: [lx * Math.cos(a) + lz * Math.sin(a), ly, -lx * Math.sin(a) + lz * Math.cos(a)] });
         break;
       }
       case 'r':
         yaw = 0; pitchOffset = 0; zoom = base.zoom; light = 0; edgeMode = EDGE_MODES.indexOf(base.edges);
         charsetName = initialCharset;
-        renderer.setStyle({ ...opts.style, zoom, light: base.light, edges: base.edges });
+        // back to the look it started with, at the current size
+        look = mergeStyles(opts.style, { width: look.width, height: look.height });
+        renderer.replaceStyle(look);
         break;
     }
   };
@@ -76,14 +82,15 @@ export function live(opts: LiveOptions) {
     onResize: () => {
       if (opts.fixedSize) return;
       const [w, h] = size();
-      renderer.setStyle({ width: w, height: h });
+      restyle({ width: w, height: h });
     },
   });
   process.on('SIGTERM', () => quit());
   process.on('uncaughtException', (e) => { screen.close(); console.error(e); process.exit(1); });
 
   const [w0, h0] = size();
-  const renderer = createRenderer(opts.mesh, mergeStyles(opts.style, { width: w0, height: h0 }));
+  look = mergeStyles(opts.style, { width: w0, height: h0 });
+  const renderer = createRenderer(opts.mesh, look);
 
   const tick = () => {
     const now = performance.now(), dt = Math.min(now - last, 100) / 1000;

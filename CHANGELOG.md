@@ -6,7 +6,15 @@ version (see [docs/format.md](docs/format.md)), so a new package version never s
 
 ## Unreleased
 
+### Added
+- `Renderer.replaceStyle(input)`: the whole style at once, in place of everything given before. `setStyle`
+  merges, so a field it leaves out or sets to undefined keeps its old value
+
 ### Fixed
+- A custom ramp stuck in `<textel-viewer>` and the playground: after one, picking a named charset changed
+  nothing until the page was reloaded. The same went for color set back to none, a material style taken
+  away, and a preset with fewer fields; the viewer now hands its whole style over each time
+- In the terminal preview, `c` did nothing after `--chars`, and `r` did not undo every key
 - The playground makes every file at the preview's Width: recordings, the HTML page, SVG, GIF, MP4
   and PNG were made at a fixed size (112 or 80 characters wide) whatever the Width, so a file could have
   less detail than the preview. The render command it shows now carries the same `--size`

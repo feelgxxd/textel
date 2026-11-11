@@ -205,7 +205,7 @@ export class TextelViewer extends Base {
   #restyle() {
     if (!this.#renderer || !this.#grid) return this.#layout();
     const s = this.#style();
-    this.#renderer.setStyle({ ...s, ...this.#gridStyle() });
+    this.#renderer.replaceStyle({ ...s, ...this.#gridStyle() });
     // show the change now, even while paused
     this.#draw();
     this.#kick();
@@ -229,7 +229,7 @@ export class TextelViewer extends Base {
     const s = this.#style();
     try {
       if (!this.#renderer) this.#renderer = createRenderer(this.#mesh, { ...s, ...this.#gridStyle() });
-      else this.#renderer.setStyle({ ...s, ...this.#gridStyle() });
+      else this.#renderer.replaceStyle({ ...s, ...this.#gridStyle() });
     } catch (error) {
       this.dispatchEvent(new CustomEvent('error', { detail: { error } }));
       return;
