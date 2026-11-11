@@ -1,6 +1,6 @@
 // Runs the real CLI in a child process, the way people use it.
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -90,4 +90,16 @@ test('cli: a note when --color model meets colors kept in image textures', () =>
   assert.equal(own.code, 0, own.err);
   assert.match(own.err, /image textures, which textel does not read yet/);
   assert.doesNotMatch(textel('preview', 'crate.obj', '--once', '--size', '20x8').err, /textures/, 'no note without --color model');
+});
+
+test('cli: a reader that stops early is a normal end, not a crash', async () => {
+  // like `textel ... | head -1`: the reader goes away before the output is written. The output is far
+  // bigger than a pipe buffer, so the write really fails
+  const child = spawn(process.execPath, [CLI, '--example', 'gem', '--once', '--size', '2000x400'], { cwd: dir, env: { ...process.env, FORCE_COLOR: '1', COLORTERM: 'truecolor' } });
+  let err = '';
+  child.stderr.on('data', (d) => { err += d; });
+  child.stdout.destroy();
+  const code = await new Promise((resolve) => child.on('close', resolve));
+  assert.equal(code, 0, err);
+  assert.doesNotMatch(err, /EPIPE/);
 });

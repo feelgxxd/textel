@@ -28,12 +28,12 @@ at [feelgxxd.github.io/textel](https://feelgxxd.github.io/textel/).
 | | |
 |---|---|
 | Code | ~4,250 lines of TypeScript in `src`, no runtime dependencies |
-| Tests | 105 (loaders, compressed glTF against meshoptimizer and draco3d, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
+| Tests | 108 (loaders, compressed glTF against meshoptimizer and draco3d, meshing, rendering, frames format, terminal player, CLI, web player and viewer in happy-dom, playground share links and exports, animated SVG, GIF and MP4 writers, 11 golden-frame snapshots) |
 | CI | green on Windows, macOS, Linux × Node 22, 24 |
 | Render speed | 1.7–3.7 ms per frame at 160×50 for the examples (53k–113k triangles) |
 | Page update | under 1 ms per frame without color, 3.6 ms with a gradient at 160×80 (desktop Chrome) |
 | Web sizes | player 3.2 KB, viewer 16 KB, playground 33 KB, docs page 20 KB (min+gzip) |
-| Published | `1.0.0` on npm; the playground and the docs deploy from `main` |
+| Published | `1.1.0` on npm; the playground and the docs deploy from `main` |
 
 ### What works
 - `textel <model>` spins a `.glb` / `.gltf` / `.obj` / `.stl` in the terminal, with keys for rotation,

@@ -37,7 +37,7 @@ The viewer draws the model live, about 16 KB, and people can turn it with a fing
 home page, an about page, a product page.
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@1.0/dist/textel-viewer.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@1.1/dist/textel-viewer.js"></script>
 <textel-viewer src="logo.glb" charset="hard" color="#ffb000"></textel-viewer>
 ```
 
@@ -67,7 +67,7 @@ The player is about 3 KB and has no 3D code in it: it plays a loop that was rend
 almost nothing on a phone.
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@1.0/dist/textel-player.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@1.1/dist/textel-player.js"></script>
 <textel-player src="logo.textel.json"></textel-player>
 ```
 
@@ -178,7 +178,7 @@ textel render logo.glb --aspect 1.5 -o logo.textel.json
 ```
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@1.0/dist/textel-player.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@1.1/dist/textel-player.js"></script>
 <textel-player src="logo.textel.json"></textel-player>
 ```
 
@@ -204,7 +204,7 @@ or `::part(screen)`. From JavaScript: `player.play()`, `player.pause()`, `player
 ### `<textel-viewer>`
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@1.0/dist/textel-viewer.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@1.1/dist/textel-viewer.js"></script>
 <textel-viewer src="model.glb" charset="hard" color="#301000,#ffb000" edges></textel-viewer>
 ```
 

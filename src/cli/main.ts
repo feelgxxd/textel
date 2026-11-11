@@ -54,4 +54,10 @@ function main(argv: string[]) {
   preview.run(argv);
 }
 
+// a reader that stops early (| head) closes the pipe: that is a normal end, not a crash
+process.stdout.on('error', (e: NodeJS.ErrnoException) => {
+  if (e.code === 'EPIPE') process.exit(0);
+  throw e;
+});
+
 main(process.argv.slice(2));

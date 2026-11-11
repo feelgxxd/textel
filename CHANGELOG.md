@@ -4,9 +4,11 @@ All notable changes to textel. Versions follow [semantic versioning](https://sem
 change that breaks code using textel needs a new major version. The frames file format has its own
 version (see [docs/format.md](docs/format.md)), so a new package version never stops old files playing.
 
-## Unreleased
+## 1.1.0 (2026-11-11)
 
 ### Added
+- "What you can make" in the README and the docs, and a "Use it as" row in the playground: the six
+  things people make with textel, each with its snippet or the export that makes it
 - `Renderer.replaceStyle(input)`: the whole style at once, in place of everything given before. `setStyle`
   merges, so a field it leaves out or sets to undefined keeps its old value
 
@@ -15,9 +17,13 @@ version (see [docs/format.md](docs/format.md)), so a new package version never s
   nothing until the page was reloaded. The same went for color set back to none, a material style taken
   away, and a preset with fewer fields; the viewer now hands its whole style over each time
 - In the terminal preview, `c` did nothing after `--chars`, and `r` did not undo every key
+- The CLI no longer prints a crash when the reader of its output stops early (`textel ... | head`)
 - The playground makes every file at the preview's Width: recordings, the HTML page, SVG, GIF, MP4
   and PNG were made at a fixed size (112 or 80 characters wide) whatever the Width, so a file could have
   less detail than the preview. The render command it shows now carries the same `--size`
+
+### Changed
+- The package's homepage is the playground site
 
 ## 1.0.0 (2026-11-09)
 
