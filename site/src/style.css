@@ -117,6 +117,12 @@ body::after {
 .examples { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .link { background: none; border: 0; padding: 0; color: var(--text); text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; cursor: pointer; font-family: var(--mono); }
 .link:hover { color: var(--accent); text-decoration-color: currentColor; }
+/* "use it as": what people make with it, each a way into the exports */
+.uses { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 14px 0 0; }
+.uses span { font: 500 11px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); margin-right: 4px; display: inline-flex; align-items: center; gap: .6em; }
+.uses span::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: var(--glow); }
+.uses .link { text-decoration: none; font-size: 12px; padding: 4px 9px; border: 1px solid var(--line-2); border-radius: 3px; color: var(--text); }
+.uses .link:hover { border-color: var(--accent); color: var(--accent); }
 .status { font: 12px var(--mono); color: var(--dim); margin: 12px 0 0; }
 .status::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); vertical-align: 1px; }
 .hint { color: var(--mute); font-size: 12px; margin: 6px 0 0; }

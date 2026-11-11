@@ -133,6 +133,7 @@ function buildMaterials() {
 }
 
 const exportsBox = h('div', { class: 'exports' });
+const exportsPanel = section('Share and export', true, exportsBox) as HTMLDetailsElement;
 
 panels.append(
   section('Start from', true,
@@ -179,10 +180,22 @@ panels.append(
     colorPicker('Background', () => state.page.bg, (v) => { state.page.bg = v; }),
   ),
   materialsPanel,
-  section('Share and export', true, exportsBox),
+  exportsPanel,
 );
 
 // ---------- exports ----------
+
+// "Use it as" under the preview: what people make with it, each opening the export that makes it
+const USES: [string, (typeof tabs)[number]][] = [
+  ['a logo on your site', 'Live on a page'], ['a README image', 'Image'], ['a CLI splash', 'Recorded loop'],
+  ['a page animation', 'Recorded loop'], ['a GIF or video', 'Image'], ['terminal art', 'Terminal'],
+];
+$('uses').append(...USES.map(([label, t]) => h('button', { type: 'button', class: 'link', onclick: () => {
+  tab = t;
+  renderExports();
+  exportsPanel.open = true;
+  exportsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+} }, label)));
 
 const tabs = ['Live on a page', 'Recorded loop', 'Image', 'Terminal', 'Preset'] as const;
 let tab: (typeof tabs)[number] = tabs[0];

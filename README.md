@@ -2,11 +2,14 @@
 
 # textel
 
-Turn 3D models into animated ASCII art, in the terminal and on the web.
+Spinning ASCII logos and scenes for your website, your README and your terminal tools, made from any 3D
+model.
 
 <p align="center"><img src="docs/gem.svg" width="480" alt="A gem spinning, drawn in ASCII characters"></p>
 
 <p align="center"><sub>An animated SVG made with <code>textel render --example gem --size 80x40 --frames 80 --fps 20 -o gem.svg</code></sub></p>
+
+Try it in the **[playground](https://feelgxxd.github.io/textel/)**, with nothing to install, or in a terminal:
 
 ```sh
 npx @feelgxxd/textel model.glb                   # spins in your terminal
@@ -22,6 +25,61 @@ next to a global textel, or `npm i draco3d` in your project. The playground and 
 Draco yet. Everything runs locally; nothing is uploaded.
 
 Docs, with the full CLI and API reference: **[feelgxxd.github.io/textel/docs](https://feelgxxd.github.io/textel/docs/)**.
+
+## What you can make
+
+Every one of these starts from the same model and the same look, tuned once in the playground or saved
+as a [preset](#presets).
+
+### A spinning logo on your site
+
+The viewer draws the model live, about 16 KB, and people can turn it with a finger or the mouse. For a
+home page, an about page, a product page.
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@1.0/dist/textel-viewer.js"></script>
+<textel-viewer src="logo.glb" charset="hard" color="#ffb000"></textel-viewer>
+```
+
+### An animated logo in your README
+
+An SVG that animates with no script, so it plays on GitHub, in docs and on blogs, and follows the
+reader's light or dark theme.
+
+```sh
+textel render logo.glb --size 80x40 --frames 80 --fps 20 -o logo.svg
+```
+
+### A splash screen for your own CLI
+
+Record the logo once, then show it for two seconds when your tool starts. Any key skips it, and the
+terminal is restored however it ends.
+
+```ts
+import { playSplash } from '@feelgxxd/textel/terminal';
+
+await playSplash('logo.textel.json', { seconds: 2 }); // made with: textel render logo.glb
+```
+
+### A light animation for a hero, a loading screen or a 404 page
+
+The player is about 3 KB and has no 3D code in it: it plays a loop that was rendered once, so it costs
+almost nothing on a phone.
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/@feelgxxd/textel@1.0/dist/textel-player.js"></script>
+<textel-player src="logo.textel.json"></textel-player>
+```
+
+### A GIF or a video for posts and chats
+
+The playground's **Image** tab makes both, in your colors, along with a PNG of the angle you like.
+
+### Art for a terminal: a login banner, a MOTD, a text file
+
+```sh
+textel logo.glb --once --size 60x30 --no-color > motd.txt
+```
 
 ## Playground
 
