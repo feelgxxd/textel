@@ -196,10 +196,13 @@ motion. The playground makes one from its **Image** tab, and the library from an
 
 ### GIF and video
 
-For chats and social posts, the playground's **Image** tab also makes a GIF (640×640, about 600 KB) and
-an MP4 video (1280×1280, about 1.4 MB), both one turn in 4 seconds in the page colors. They are made in
-your browser; the video needs a browser that can encode H.264 (current Chrome, Edge and Safari).
-The same tab saves a PNG of the preview at the angle it shows.
+For chats and social posts, the playground's **Image** tab also makes a GIF (8 pixels per character, so
+768×768 at the default width of 96) and an MP4 video (twice as sharp), both one turn in 4 seconds in the
+page colors. They are made in your browser; the video needs a browser that can encode H.264 (current
+Chrome, Edge and Safari). The same tab saves a PNG of the preview at the angle it shows.
+
+Every file the playground makes uses the preview's **Width**, with half as many rows: a wider preview
+gives a more detailed file, and a bigger one.
 
 ### One HTML file
 

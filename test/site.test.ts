@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  anglesFromLight, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, lightFromAngles, needsPreset, presetJSON, PRESETS, standaloneHTML, stateHash, VERSION, type State,
+  anglesFromLight, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, encodeState, exportGrid, lightFromAngles, needsPreset, presetJSON, PRESETS, standaloneHTML, stateHash, VERSION, type State,
 } from '../site/src/state.ts';
 import { findExample } from '../src/examples.ts';
 
@@ -47,7 +47,10 @@ test('site: CLI commands run with the real CLI', () => {
   const s = state({ charset: 'hard', color: ['#2a1400', '#ffb000'], edges: 'depth', pitch: 0.3, spin: 0 });
   const preview = cliCommand(s, 'preview', 'logo.glb');
   assert.equal(preview, 'npx @feelgxxd/textel logo.glb --chars hard --color #2a1400,#ffb000 --edges depth --pitch 0.3 --spin 0');
-  assert.equal(cliCommand(s, 'render', 'my logo.glb'), 'npx @feelgxxd/textel render "my logo.glb" --chars hard --color #2a1400,#ffb000 --edges depth --pitch 0.3 --spin 0 -o "my logo.textel.json"');
+  assert.equal(cliCommand(s, 'render', 'my logo.glb'), 'npx @feelgxxd/textel render "my logo.glb" --chars hard --color #2a1400,#ffb000 --edges depth --pitch 0.3 --spin 0 --size 96x48 -o "my logo.textel.json"');
+  // files are made at the preview's Width: a wider preview, a more detailed file
+  assert.deepEqual(exportGrid({ ...s, cols: 160 }), { width: 160, height: 80 });
+  assert.match(cliCommand({ ...s, cols: 160 }, 'render', 'a.glb'), / --size 160x80 /);
   const folds = state({ edges: 'crease' });
   assert.equal(cliCommand(folds, 'preview', 'a.glb'), 'npx @feelgxxd/textel a.glb --edges crease');
   assert.match(embedSnippet(folds, 'viewer', 'a.glb'), / edges="crease"/);

@@ -165,6 +165,13 @@ export function embedSnippet(s: State, kind: 'viewer' | 'player', file: string):
 const shellQuote = (v: string) => (/^[\w.,#/:+-]+$/.test(v) ? v : `"${v.replace(/(["\\$`])/g, '\\$1')}"`);
 
 /** the same look from the terminal; `render` records a file for the player */
+/**
+ * The grid a file is made at: the preview's Width, and half as many rows, which is a square picture
+ * with characters twice as tall as wide. Recordings, images and the render command all use it, so a
+ * file has the detail the preview shows.
+ */
+export const exportGrid = (s: State) => ({ width: s.cols, height: Math.round(s.cols / 2) });
+
 export function cliCommand(s: State, kind: 'preview' | 'render', file: string): string {
   const look = s.look, parts = ['npx', '@feelgxxd/textel'];
   if (kind === 'render') parts.push('render');
@@ -180,7 +187,11 @@ export function cliCommand(s: State, kind: 'preview' | 'render', file: string): 
   for (const k of ['pitch', 'spin', 'zoom', 'distance', 'ambient'] as const) {
     if (look[k] !== undefined) parts.push(`--${k}`, String(look[k]));
   }
-  if (kind === 'render') parts.push('-o', shellQuote(file.replace(/\.[a-z0-9]+$/i, '') + '.textel.json'));
+  // the preview command fills the terminal; a recording is made at the preview's Width
+  if (kind === 'render') {
+    const { width, height } = exportGrid(s);
+    parts.push('--size', `${width}x${height}`, '-o', shellQuote(file.replace(/\.[a-z0-9]+$/i, '') + '.textel.json'));
+  }
   return parts.join(' ');
 }
 

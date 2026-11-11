@@ -4,6 +4,13 @@ All notable changes to textel. Versions follow [semantic versioning](https://sem
 change that breaks code using textel needs a new major version. The frames file format has its own
 version (see [docs/format.md](docs/format.md)), so a new package version never stops old files playing.
 
+## Unreleased
+
+### Fixed
+- The playground makes every file at the preview's Width: recordings, the HTML page, SVG, GIF, MP4
+  and PNG were made at a fixed size (112 or 80 characters wide) whatever the Width, so a file could have
+  less detail than the preview. The render command it shows now carries the same `--size`
+
 ## 1.0.0 (2026-11-09)
 
 The first stable release. The names, options and file format are frozen; from here on they change only

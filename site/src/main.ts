@@ -14,7 +14,7 @@ import { createRenderer } from '../../src/render.ts';
 import { DEFAULTS, mergeStyles, type EdgeMode, type MaterialInput } from '../../src/style.ts';
 import {
   anglesFromLight, CHARSET_NAMES, cliCommand, decodeState, DEFAULT_STATE, embedSnippet, lightFromAngles,
-  needsPreset, presetJSON, PRESETS, standaloneHTML, stateHash, type State,
+  exportGrid, needsPreset, presetJSON, PRESETS, standaloneHTML, stateHash, type State,
 } from './state.ts';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -268,10 +268,11 @@ async function recordLoop(button: HTMLButtonElement, base: string, kind: 'json' 
   };
   const name = kind === 'json' ? `${base}.textel.json` : `${base}.${kind}`;
   try {
-    // a recorded loop plays back from data; the images store every frame whole, so fewer frames and
-    // cells keep them light. All of them take 4 s for a turn
-    const [width, height, frames, fps] = kind === 'json' || kind === 'html' ? [112, 56, 120, 30] : [80, 40, 80, 20];
-    const r = createRenderer(mesh, mergeStyles(state.look, { width, height, aspect: 2 }));
+    // the grid is the preview's Width, so the file has the detail that was chosen. A recorded loop plays
+    // back from data; the images store every frame whole, so fewer frames keep them light. All of them
+    // take 4 s for a turn
+    const [frames, fps] = kind === 'json' || kind === 'html' ? [120, 30] : [80, 20];
+    const r = createRenderer(mesh, mergeStyles(state.look, { ...exportGrid(state), aspect: 2 }));
     const b = new RecordingBuilder();
     for (let i = 0; i < frames; i++) {
       b.add(r.render({ yaw: (i / frames) * Math.PI * 2 }));
@@ -314,9 +315,9 @@ function snapshotButton(base: string) {
     if (!mesh) return;
     const name = `${base}.png`;
     try {
-      // the preview's own camera, on a bigger grid
+      // the preview's own camera, at the preview's Width
       const { yaw, pitch, zoom, fitPitch } = viewer.view;
-      const r = createRenderer(mesh, mergeStyles(state.look, { width: 112, height: 56, aspect: 2, zoom, fitPitch }));
+      const r = createRenderer(mesh, mergeStyles(state.look, { ...exportGrid(state), aspect: 2, zoom, fitPitch }));
       const builder = new RecordingBuilder();
       builder.add(r.render({ yaw, pitch }));
       const rec = builder.build(1, { title: base });
